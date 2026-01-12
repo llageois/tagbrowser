@@ -71,13 +71,9 @@ $script:PendingSearchRequest = $null
 $script:PendingSelectionPaths = $null
 
 $script:PendingSelectionCurrentPath = $null
-$script:SuppressFoundTagsEvent = $false
 
-$script:SearchWorker = $null
 
-$script:PendingSearchArgs = $null
 
-$script:ColumnsFittedOnce = $false
 
 # --------------------------------------------------------------------
 
@@ -1045,7 +1041,6 @@ $script:WildcardMatchAnywhereImpl = {
 # --- Wildcard match helper (robust in events/closures;
 no self-recursion) -- -
 
-$script:WildcardMatchAnywhereImpl = {
 
     param([string]$Text, [string]$Pattern)
 
@@ -2531,7 +2526,6 @@ $chkEverything.Add_CheckedChanged({
 
                 if ($status -eq "Everything: not running") {
                     if (-not $script:EverythingHintShown) {
-                        $script:EverythingHintShown = $true
                         [System.Windows.Forms.MessageBox]::Show(
                             "Everything is installed but not running.`r`n`r`n" +
                             "Please start Everything, then check 'Use Everything (fast)' again.",
@@ -3452,8 +3446,6 @@ function Restore-SelectionAfterRefresh([string[]]$PreferredPaths, [int]$Fallback
 
     if ($script:PendingSelectionPaths -and (Get-Count $script:PendingSelectionPaths) -gt 0) {
         $PreferredPaths = @($PreferredPaths) + @($script:PendingSelectionPaths)
-        $script:PendingSelectionPaths = $null
-        $script:PendingSelectionCurrentPath = $null
     }
 
     $pref = @(Force-Array $PreferredPaths)
@@ -3628,7 +3620,6 @@ function Fill-GridFromItems($items, [string[]]$PreferredPaths, [int]$FallbackInd
             Apply-DuplicatesToGrid
         }
         finally {
-            $script:ApplyingDupMode = $false
         }
     }
 
@@ -3640,7 +3631,6 @@ function Fill-GridFromItems($items, [string[]]$PreferredPaths, [int]$FallbackInd
 
 # ------------------------------ Async search (avoid UI freeze) ------------------------------
 
-$script:PendingSearchArgs = $null
 
 if ($null -eq $script:SearchWorker) {
 
@@ -3752,15 +3742,12 @@ if ($null -eq $script:SearchWorker) {
             }
             catch {}
 
-            $script:IsSearching = $false
 
             if ($e.Cancelled -or $script:LastSearchInterrupted) {
 
                 Set-Status "Search interrupted"
                 try { Set-Info "Interrupted" }
                 catch { }
-                $script:LastSearchInterrupted = $false
-                $script:PendingSearchArgs = $null
                 $script:PendingSearchRequest = $false
                 return
 
@@ -3804,7 +3791,6 @@ if ($null -eq $script:SearchWorker) {
 
                 $next = $script:PendingSearchArgs
 
-                $script:PendingSearchArgs = $null
 
                 Start-SearchSync -PreferredPaths $next.Preferred -FallbackIndex $next.Fallback
 
@@ -3829,7 +3815,6 @@ function Request-InterruptSearch {
 
  
     # Do not auto-run pending searches after an explicit interruption
-    $script:PendingSearchArgs = $null
     $script:PendingSearchRequest = $false
 
  
@@ -3859,7 +3844,6 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
     if ([string]::IsNullOrWhiteSpace($dir) -or -not (Test-Path -LiteralPath $dir)) {
         try { $grid.Rows.Clear() }
         catch {}
-        $script:CurrentItems = @()
         Set-Status ""
         Set-Info "Ready"
         return
@@ -3911,7 +3895,6 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
  
     # New run
     $script:IsSearching = $true
-    $script:LastSearchInterrupted = $false
     $script:PendingSearchRequest = $false
 
  
@@ -3944,7 +3927,6 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
     }
     catch {
         Debug-Log ("Start-SearchAsync: ERROR {0}" -f $_.Exception.Message)
-        $script:IsSearching = $false
         Set-Info "Ready"
     }
 }
@@ -3971,7 +3953,6 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
     if ([string]::IsNullOrWhiteSpace($dir) -or -not (Test-Path -LiteralPath $dir)) {
         try { $grid.Rows.Clear() }
         catch {}
-        $script:CurrentItems = @()
         Set-Status ""
         Set-Info "Ready"
         return
@@ -4033,10 +4014,7 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
         catch { } }
 
     $script:IsSearching = $true
-    $script:LastSearchInterrupted = $false
-    $script:CancelSearchRequested = $false
     $script:PendingSearchRequest = $false
-    $script:PendingSearchArgs = $null
 
  
     # Disable UI while searching
@@ -4100,9 +4078,6 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
         if ($script:CancelSearchRequested -or $script:LastSearchInterrupted) {
             Set-Status "Search interrupted"
             Set-Info "Interrupted"
-            $script:CancelSearchRequested = $false
-            $script:LastSearchInterrupted = $false
-            $script:PendingSearchArgs = $null
             $script:PendingSearchRequest = $false
             return
         }
@@ -4132,7 +4107,6 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
     }
     finally {
 
-        $script:IsSearching = $false
 
  
         # Re-enable UI
@@ -4153,7 +4127,6 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
         if ($script:PendingSearchRequest -and $script:PendingSearchArgs) {
             $pa = $script:PendingSearchArgs
             $script:PendingSearchRequest = $false
-            $script:PendingSearchArgs = $null
             try { Start-SearchSync -PreferredPaths $pa.Preferred -FallbackIndex $pa.Fallback -UpdatingView:([bool]$pa.UpdatingView) }
             catch { }
         }
@@ -4205,7 +4178,6 @@ function Add-SearchHistoryFromArgs([object]$args) {
         }
 
         if ($null -eq $script:SearchHistory) {
-            $script:SearchHistory = New-Object System.Collections.ArrayList
         }
 
  
@@ -4248,7 +4220,6 @@ function Add-SearchHistoryFromArgs([object]$args) {
 
 function Apply-SearchHistoryEntry([object]$h) {
     if ($null -eq $h) { return }
-    $script:IsRestoring = $true
     try {
         if ($txtDir) { $txtDir.Text = [string]$h.Dir }
         if ($chkBody) { $chkBody.Checked = [bool]$h.BodyEnabled }
@@ -4428,7 +4399,6 @@ $grid.Add_ColumnHeaderMouseClick({
 
             $script:SortColumnName = $prop
 
-            $script:SortAscending = $true
 
         }
 
@@ -4683,14 +4653,12 @@ function Refresh-TagsFound {
 
             $comboFoundTags.EndUpdate()
 
-            $script:SuppressFoundTagsEvent = $false
 
         }
 
     }
     catch {
 
-        $script:SuppressFoundTagsEvent = $false
 
     }
 
@@ -5303,7 +5271,6 @@ function Apply-Settings([object]$cfg) {
     $search = Get-ObjProp $cfg "Search"
     $gridCfg = Get-ObjProp $cfg "Grid"
 
-    $script:RestoringSettings = $true
     try {
  
         # ---- Window
@@ -5627,7 +5594,6 @@ function Save-Settings {
 function Restore-Settings {
  
     # Block searches/events until restore completes, then release and run any pending search request.
-    $script:IsRestoring = $true
     try {
         $cfg = Read-SettingsFile
         if ($null -eq $cfg) {
@@ -5761,7 +5727,6 @@ function Try-GetVideoDescFromMediaInfo {
 
 function Get-VideoDescription([string]$Path) {
 
-    $script:LastMediaInfoMissing = $false
 
  
     # 1) MediaInfo CLI (optional, best results)
@@ -5928,7 +5893,6 @@ function Try-GetAudioDescFromMediaInfo {
 }
 
 function Get-AudioDescription([string]$Path) {
-    $script:LastMediaInfoMissing = $false
 
     $miDesc = Try-GetAudioDescFromMediaInfo -Path $Path
     if ($miDesc) { return $miDesc }
@@ -6212,7 +6176,6 @@ function Do-CopyTags {
             if ((Get-Count $script:CopiedTags) -le 0) {
  
                 # No tags -> do not start copy process
-                $script:CopiedTags = @()
                 $script:CopiedTagsFrom = ""
                 [System.Windows.Forms.MessageBox]::Show($form, "Selected file has no tags to copy.", "Copy tags",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
@@ -6222,7 +6185,6 @@ function Do-CopyTags {
             if ((Get-Count $script:CopiedTags) -le 0) {
  
                 # No tags on source file -> abort the copy-tags workflow
-                $script:CopiedTags = @()
                 $script:CopiedTagsFrom = ""
                 [System.Windows.Forms.MessageBox]::Show($form, "The selected file has no tag to copy.", "Copy tags",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
@@ -6319,9 +6281,7 @@ function Do-CopyTags {
 
     Set-OpStatus ("Copy tags: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
-    $script:CopiedTags = @()
 
-    $script:CopiedTagsFrom = $null
 
     Refresh-TagsFound
 
@@ -6711,7 +6671,6 @@ $any = ($labels | Where-Object { $_ -like "Any file*" } | Select-Object -First 1
 
 $rest = @($labels | Where-Object { $_ -ne $any } | Sort-Object)
 
-$script:IsInitializing = $true
 
 $comboTypes.BeginUpdate()
 
@@ -6939,7 +6898,6 @@ function Clear-DuplicateColors {
         }
     }
     catch {}
-    $script:DuplicateColorsEnabled = $false
 }
 
 function Get-ItemMediaSignature($item) {
@@ -7026,7 +6984,6 @@ function Do-ToggleDuplicates {
     }
     else {
 
-        $script:DupModeEnabled = $false
 
  
         # Restore original item list (pre-duplicates), if we saved it.
@@ -7035,7 +6992,6 @@ function Do-ToggleDuplicates {
                 $script:CurrentItems = @($script:DupSavedItems)
             }
             catch { }
-            $script:DupSavedItems = $null
 
  
             # Refill grid in the original order (do not auto-fit columns;
@@ -7065,8 +7021,6 @@ function Do-ToggleDuplicates {
         }
     }
 
-    $script:DupGroupMap = @{}
-    $script:DupTotal = 0
     Update-DuplicateUi
 
  
@@ -7363,7 +7317,6 @@ function Ensure-DuplicateWorker {
                         return
                     }
 
-                    $script:DupGroupMap = @{}
                     try { $script:DupGroupMap = $res.Map }
                     catch { $script:DupGroupMap = @{} }
 
@@ -7469,8 +7422,6 @@ function Do-FindDuplicates {
     if ($null -eq $script:CurrentItems -or $script:CurrentItems.Count -eq 0) {
  
         # Nothing to do (no error)
-        $script:DupGroupMap = @{}
-        $script:DupTotal = 0
         Apply-DuplicateUiFromMap
         return
     }
@@ -7502,7 +7453,6 @@ function Do-FindDuplicates {
         catch {
  
             # Fallback: if worker failed to start, compute without hash synchronously
-            $script:DupUseHash = $false
         }
 
         return
@@ -7542,7 +7492,6 @@ function Do-FindDuplicates {
         }
     }
 
-    $script:DupGroupMap = @{}
     $groupId = 0
 
     foreach ($k in $groups.Keys) {
@@ -7555,7 +7504,6 @@ function Do-FindDuplicates {
 
  
     # Total "duplicate files" shown: count of items that are in a dup group.
-    $script:DupTotal = 0
     foreach ($it in $script:CurrentItems) {
         if ($script:DupGroupMap.ContainsKey([string]$it.Path)) { $script:DupTotal++ }
     }
