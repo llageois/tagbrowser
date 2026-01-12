@@ -133,12 +133,14 @@ function Normalize-FSPath([string]$Path) {
             if ($rp -is [System.Array]) { $rp = $rp[0] }
             if ($rp -and ($rp.PSObject.Properties.Name -contains 'ProviderPath') -and $rp.ProviderPath) {
                 $p = [string]$rp.ProviderPath
-            } elseif ($rp -and ($rp.PSObject.Properties.Name -contains 'Path') -and $rp.Path) {
+            }
+            elseif ($rp -and ($rp.PSObject.Properties.Name -contains 'Path') -and $rp.Path) {
                 $p = [string]$rp.Path
                 if ($p.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) { $p = $p.Substring($prefix.Length) }
             }
         }
-    } catch { }
+    }
+    catch { }
     return $p
 }
 
@@ -155,7 +157,8 @@ function Add-RecentDir([string]$Dir) {
         }
         $txtDir.Items.Insert(0, $d)
         while ($txtDir.Items.Count -gt 20) { $txtDir.Items.RemoveAt($txtDir.Items.Count - 1) }
-    } catch { }
+    }
+    catch { }
 }
 
 
@@ -177,27 +180,30 @@ try {
     [System.Windows.Forms.Application]::SetUnhandledExceptionMode([System.Windows.Forms.UnhandledExceptionMode]::CatchException)
 
     [System.Windows.Forms.Application]::add_ThreadException({
-        param($sender, $e)
-        try {
-            # Log only if DEBUG is enabled
-            Debug-Log ("[UI EXCEPTION] " + $e.Exception.Message)
-            [System.Windows.Forms.MessageBox]::Show(
-                ("Une erreur inattendue est survenue:`n`n" + $e.Exception.Message),
-                "Erreur",
-                [System.Windows.Forms.MessageBoxButtons]::OK,
-                [System.Windows.Forms.MessageBoxIcon]::Error
-            ) | Out-Null
-        } catch { }
-    })
+            param($sender, $e)
+            try {
+                # Log only if DEBUG is enabled
+                Debug-Log ("[UI EXCEPTION] " + $e.Exception.Message)
+                [System.Windows.Forms.MessageBox]::Show(
+                    ("Une erreur inattendue est survenue:`n`n" + $e.Exception.Message),
+                    "Erreur",
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Error
+                ) | Out-Null
+            }
+            catch { }
+        })
 
     [AppDomain]::CurrentDomain.add_UnhandledException({
-        param($sender, $e)
-        try {
-            $ex = $e.ExceptionObject
-            Debug-Log ("[FATAL] " + [string]$ex)
-        } catch { }
-    })
-} catch { }
+            param($sender, $e)
+            try {
+                $ex = $e.ExceptionObject
+                Debug-Log ("[FATAL] " + [string]$ex)
+            }
+            catch { }
+        })
+}
+catch { }
 
 
 # --- Keyboard cues (mnemonics) ---
@@ -219,7 +225,8 @@ function Set-UseMnemonic {
         if ($null -ne $Control -and $Control.PSObject.Properties.Match("UseMnemonic").Count -gt 0) {
             $Control.UseMnemonic = $true
         }
-    } catch {}
+    }
+    catch {}
 }
 
 function Enable-KeyboardCues {
@@ -232,7 +239,8 @@ function Enable-KeyboardCues {
         # UIS_CLEAR = 2 ; UISF_HIDEFOCUS = 1 ; UISF_HIDEACCEL = 2
         [void][NativeMethods]::SendMessage($h, 0x127, [IntPtr]0x00010002, [IntPtr]::Zero) # clear hide focus
         [void][NativeMethods]::SendMessage($h, 0x127, [IntPtr]0x00020002, [IntPtr]::Zero) # clear hide accel
-    } catch {}
+    }
+    catch {}
 }
 
 
@@ -262,9 +270,10 @@ function Get-DirCacheKey([string]$Dir) {
     try {
         if ([string]::IsNullOrWhiteSpace($Dir)) { return "" }
         $d = $Dir.Trim()
-        $d = $d.TrimEnd('\','/')
+        $d = $d.TrimEnd('\', '/')
         return $d.ToLowerInvariant()
-    } catch {
+    }
+    catch {
         return [string]$Dir
     }
 }
@@ -277,7 +286,8 @@ function Test-IsNetworkPath([string]$Path) {
         if ([string]::IsNullOrWhiteSpace($root)) { return $false }
         $di = New-Object System.IO.DriveInfo($root)
         return ($di.DriveType -eq [System.IO.DriveType]::Network)
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -289,7 +299,8 @@ function Invalidate-DirScanCache([string]$Dir) {
             [void]$script:DirScanCache.Remove($key)
             Debug-Log ("ScanCache: invalidated '{0}'" -f $Dir)
         }
-    } catch { }
+    }
+    catch { }
 }
 
 function Get-OrBuild-DirFileIndex([string]$Dir, [scriptblock]$CancelCheck, [switch]$ForceRefresh) {
@@ -314,7 +325,8 @@ function Get-OrBuild-DirFileIndex([string]$Dir, [scriptblock]$CancelCheck, [swit
                     Debug-Log ("ScanCache: hit ({0} files)" -f (Get-Count $entry.Files))
                     return @($entry.Files)
                 }
-            } catch { }
+            }
+            catch { }
         }
 
         Debug-Log ("ScanCache: build index for '{0}'" -f $Dir)
@@ -324,7 +336,8 @@ function Get-OrBuild-DirFileIndex([string]$Dir, [scriptblock]$CancelCheck, [swit
             Files    = @($all)
         }
         return @($all)
-    } catch {
+    }
+    catch {
         return $null
     }
 }
@@ -340,7 +353,7 @@ function Get-FilesRecursiveSafe {
         [switch]$NoSubdirs
 
     )
-if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) { return @() }
+    if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) { return @() }
     if ($NoSubdirs) {
         try {
             $di = New-Object System.IO.DirectoryInfo($Dir)
@@ -351,9 +364,11 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
                     # Do NOT pre-filter by extension here; let the caller filter consistently.
                     [void]$tmp.Add($fi)
                 }
-            } catch { }
+            }
+            catch { }
             return $tmp.ToArray()
-        } catch {
+        }
+        catch {
             return @()
         }
     }
@@ -377,7 +392,8 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
         try {
             $extSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
             foreach ($e in $extFilter) { [void]$extSet.Add($e) }
-        } catch { $extSet = $null }
+        }
+        catch { $extSet = $null }
     }
 
 
@@ -394,13 +410,13 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
 
     $results = New-Object System.Collections.Generic.List[System.IO.FileInfo]
 
-    $stack   = New-Object System.Collections.Generic.Stack[string]
+    $stack = New-Object System.Collections.Generic.Stack[string]
 
     $stack.Push($Dir)
 
 
 
-    $dirTick  = 0
+    $dirTick = 0
 
     $fileTick = 0
 
@@ -430,43 +446,45 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
 
         try {
 
-	    $extCount = Get-Count $extFilter
+            $extCount = Get-Count $extFilter
 
-	    if ($extCount -eq 1) {
-	        # Single extension -> server-side filtering is usually beneficial
-	        $pattern = "*" + $extFilter[0]
-	        foreach ($fi in $di.EnumerateFiles($pattern)) {
-	            if ($CancelCheck -and (& $CancelCheck)) { break }
-	            [void]$results.Add($fi)
-	            $fileTick++
-	            if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
-	        }
-	    }
-	    elseif ($extCount -gt 1 -and $null -ne $extSet) {
-	        # Many extensions -> do ONE listing per folder, then filter in-memory (avoid N listings per folder over SMB)
-	        foreach ($fi in $di.EnumerateFiles()) {
-	            if ($CancelCheck -and (& $CancelCheck)) { break }
-	            try {
-	                if (-not $extSet.Contains($fi.Extension)) { continue }
-	            } catch {
-	                continue
-	            }
-	            [void]$results.Add($fi)
-	            $fileTick++
-	            if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
-	        }
-	    }
-	    else {
-	        # No extension filter (or extSet failed) -> enumerate all files
-	        foreach ($fi in $di.EnumerateFiles()) {
-	            if ($CancelCheck -and (& $CancelCheck)) { break }
-	            [void]$results.Add($fi)
-	            $fileTick++
-	            if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
-	        }
-	    }
+            if ($extCount -eq 1) {
+                # Single extension -> server-side filtering is usually beneficial
+                $pattern = "*" + $extFilter[0]
+                foreach ($fi in $di.EnumerateFiles($pattern)) {
+                    if ($CancelCheck -and (& $CancelCheck)) { break }
+                    [void]$results.Add($fi)
+                    $fileTick++
+                    if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
+                }
+            }
+            elseif ($extCount -gt 1 -and $null -ne $extSet) {
+                # Many extensions -> do ONE listing per folder, then filter in-memory (avoid N listings per folder over SMB)
+                foreach ($fi in $di.EnumerateFiles()) {
+                    if ($CancelCheck -and (& $CancelCheck)) { break }
+                    try {
+                        if (-not $extSet.Contains($fi.Extension)) { continue }
+                    }
+                    catch {
+                        continue
+                    }
+                    [void]$results.Add($fi)
+                    $fileTick++
+                    if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
+                }
+            }
+            else {
+                # No extension filter (or extSet failed) -> enumerate all files
+                foreach ($fi in $di.EnumerateFiles()) {
+                    if ($CancelCheck -and (& $CancelCheck)) { break }
+                    [void]$results.Add($fi)
+                    $fileTick++
+                    if (($fileTick % 400) -eq 0) { try { [System.Windows.Forms.Application]::DoEvents() } catch {} }
+                }
+            }
 
-        } catch {
+        }
+        catch {
 
             # ignore
 
@@ -485,7 +503,8 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
 
                     if (($sub.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { continue }
 
-                } catch { continue }
+                }
+                catch { continue }
 
                 $stack.Push($sub.FullName)
 
@@ -495,7 +514,8 @@ if ([string]::IsNullOrWhiteSpace($Dir) -or -not (Test-Path -LiteralPath $Dir)) {
 
             }
 
-        } catch {
+        }
+        catch {
 
             # ignore
 
@@ -531,7 +551,8 @@ function Get-Count($x) {
 
         return $n
 
-    } catch {
+    }
+    catch {
 
         return 1
 
@@ -703,7 +724,7 @@ function Normalize-Tags([string[]]$Tags) {
 
     $front = @()
 
-    foreach ($p in @("cl","ps")) {
+    foreach ($p in @("cl", "ps")) {
 
         if ($arr -contains $p) { $front += $p }
 
@@ -713,11 +734,11 @@ function Normalize-Tags([string[]]$Tags) {
 
     # suffixes en fin : *cim, *cob, *cif, *swa
 
-    $backSuffix = @("cim","cob","cif","swa")
+    $backSuffix = @("cim", "cob", "cif", "swa")
 
     $back = @()
 
-    $mid  = @()
+    $mid = @()
 
 
 
@@ -793,9 +814,9 @@ function Tokenize-Expr([string]$Expr) {
 
 
 
-        if ($ch -eq '(') { $toks.Add(@{type='lparen'; value='('}) | Out-Null; $i++; continue }
+        if ($ch -eq '(') { $toks.Add(@{type = 'lparen'; value = '(' }) | Out-Null; $i++; continue }
 
-        if ($ch -eq ')') { $toks.Add(@{type='rparen'; value=')'}) | Out-Null; $i++; continue }
+        if ($ch -eq ')') { $toks.Add(@{type = 'rparen'; value = ')' }) | Out-Null; $i++; continue }
 
 
 
@@ -811,7 +832,7 @@ function Tokenize-Expr([string]$Expr) {
 
         }
 
-        $w = $Expr.Substring($i, $j-$i)
+        $w = $Expr.Substring($i, $j - $i)
 
         $i = $j
 
@@ -819,13 +840,13 @@ function Tokenize-Expr([string]$Expr) {
 
         switch ($w) {
 
-            'et'  { $toks.Add(@{type='and'; value='et'})  | Out-Null }
+            'et' { $toks.Add(@{type = 'and'; value = 'et' })  | Out-Null }
 
-            'ou'  { $toks.Add(@{type='or';  value='ou'})  | Out-Null }
+            'ou' { $toks.Add(@{type = 'or'; value = 'ou' })  | Out-Null }
 
-            'non' { $toks.Add(@{type='not'; value='non'}) | Out-Null }
+            'non' { $toks.Add(@{type = 'not'; value = 'non' }) | Out-Null }
 
-            default { $toks.Add(@{type='word'; value=$w}) | Out-Null }
+            default { $toks.Add(@{type = 'word'; value = $w }) | Out-Null }
 
         }
 
@@ -859,7 +880,7 @@ function Normalize-TagFilterForParse([string]$s) {
 
     if ($t -match '\s') {
 
-        return '"' + ($t -replace '"','""') + '"'
+        return '"' + ($t -replace '"', '""') + '"'
 
     }
 
@@ -913,11 +934,11 @@ function Parse-Expr([object[]]$Tokens) {
 
 
 
-        if ($p.type -eq 'word')   { $script:pos++; return @{type='leaf'; value=$p.value} }
+        if ($p.type -eq 'word') { $script:pos++; return @{type = 'leaf'; value = $p.value } }
 
         if ($p.type -eq 'lparen') { Eat 'lparen' | Out-Null; $n = ParseOr; Eat 'rparen' | Out-Null; return $n }
 
-        if ($p.type -eq 'not')    { Eat 'not'   | Out-Null; $inner = ParsePrimary; return @{type='not'; child=$inner} }
+        if ($p.type -eq 'not') { Eat 'not'   | Out-Null; $inner = ParsePrimary; return @{type = 'not'; child = $inner } }
 
 
 
@@ -941,9 +962,10 @@ function Parse-Expr([object[]]$Tokens) {
 
                 $right = ParsePrimary
 
-                $left = @{type='and'; left=$left; right=$right}
+                $left = @{type = 'and'; left = $left; right = $right }
 
-            } else { break }
+            }
+            else { break }
 
         }
 
@@ -967,9 +989,10 @@ function Parse-Expr([object[]]$Tokens) {
 
                 $right = ParseAnd
 
-                $left = @{type='or'; left=$left; right=$right}
+                $left = @{type = 'or'; left = $left; right = $right }
 
-            } else { break }
+            }
+            else { break }
 
         }
 
@@ -1007,11 +1030,11 @@ function Eval-Ast($Node, [scriptblock]$LeafEval) {
 
         'leaf' { return [bool](& $LeafEval $Node.value) }
 
-        'not'  { return -not (Eval-Ast $Node.child $LeafEval) }
+        'not' { return -not (Eval-Ast $Node.child $LeafEval) }
 
-        'and'  { return (Eval-Ast $Node.left $LeafEval) -and (Eval-Ast $Node.right $LeafEval) }
+        'and' { return (Eval-Ast $Node.left $LeafEval) -and (Eval-Ast $Node.right $LeafEval) }
 
-        'or'   { return (Eval-Ast $Node.left $LeafEval) -or  (Eval-Ast $Node.right $LeafEval) }
+        'or' { return (Eval-Ast $Node.left $LeafEval) -or (Eval-Ast $Node.right $LeafEval) }
 
         default { throw "Unknown node type '$($Node.type)'" }
 
@@ -1197,21 +1220,21 @@ function Make-LeafEval-ForTags([string[]]$Tags) {
 
 $script:FileTypeOptions = @(
 
-    [pscustomobject]@{ Label="Any file (*.*)"; Exts=@() }
+    [pscustomobject]@{ Label = "Any file (*.*)"; Exts = @() }
 
-    [pscustomobject]@{ Label="Archives (.7z,.rar,.zip,...)"; Exts=@(".7z",".rar",".zip",".tar",".gz",".bz2") }
+    [pscustomobject]@{ Label = "Archives (.7z,.rar,.zip,...)"; Exts = @(".7z", ".rar", ".zip", ".tar", ".gz", ".bz2") }
 
-    [pscustomobject]@{ Label="Audio files (.aac,.flac,.mp3,...)"; Exts=@(".aac",".flac",".m4a",".mp3",".ogg",".wav",".wma",".aiff",".alac") }
+    [pscustomobject]@{ Label = "Audio files (.aac,.flac,.mp3,...)"; Exts = @(".aac", ".flac", ".m4a", ".mp3", ".ogg", ".wav", ".wma", ".aiff", ".alac") }
 
-    [pscustomobject]@{ Label="Documents (.doc,.docx,.xls,...)"; Exts=@(".doc",".docx",".xls",".xlsx",".ppt",".pptx",".pdf",".rtf",".odt",".ods",".odp",".csv",".txt",".md",".log",".nfo") }
+    [pscustomobject]@{ Label = "Documents (.doc,.docx,.xls,...)"; Exts = @(".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf", ".rtf", ".odt", ".ods", ".odp", ".csv", ".txt", ".md", ".log", ".nfo") }
 
-    [pscustomobject]@{ Label="Executables/installers (.exe,.msi,...)"; Exts=@(".exe",".msi",".msix") }
+    [pscustomobject]@{ Label = "Executables/installers (.exe,.msi,...)"; Exts = @(".exe", ".msi", ".msix") }
 
-    [pscustomobject]@{ Label="Images (.bmp,.gif,.jpg,.png,...)"; Exts=@(".bmp",".gif",".jpg",".jpeg",".png",".tif",".tiff",".webp",".heic",".cr2",".nef",".arw",".dng",".orf",".raf") }
+    [pscustomobject]@{ Label = "Images (.bmp,.gif,.jpg,.png,...)"; Exts = @(".bmp", ".gif", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp", ".heic", ".cr2", ".nef", ".arw", ".dng", ".orf", ".raf") }
 
-    [pscustomobject]@{ Label="Subtitles (.srt,.ass,...)"; Exts=@(".srt",".ass",".ssa",".vtt") }
+    [pscustomobject]@{ Label = "Subtitles (.srt,.ass,...)"; Exts = @(".srt", ".ass", ".ssa", ".vtt") }
 
-    [pscustomobject]@{ Label="Video files (.avi,.mp4,.wmv,...)"; Exts=@(".avi",".mkv",".mov",".mp4",".mpg",".mpeg",".wmv",".m4v",".webm",".flv") }
+    [pscustomobject]@{ Label = "Video files (.avi,.mp4,.wmv,...)"; Exts = @(".avi", ".mkv", ".mov", ".mp4", ".mpg", ".mpeg", ".wmv", ".m4v", ".webm", ".flv") }
 
 )
 
@@ -1254,7 +1277,8 @@ function Get-SelectedTypeLabel {
             $s = [string]$Combo.Items[0]
         }
         return $s
-    } catch {
+    }
+    catch {
         return ""
     }
 }
@@ -1305,23 +1329,24 @@ function Parse-SizeToBytes([string]$s) {
 
         $mul = 1.0
         switch ($unit) {
-            ''   { $mul = 1.0; break }
-            'b'  { $mul = 1.0; break }
-            'k'  { $mul = 1024.0; break }
+            '' { $mul = 1.0; break }
+            'b' { $mul = 1.0; break }
+            'k' { $mul = 1024.0; break }
             'kb' { $mul = 1024.0; break }
-            'm'  { $mul = 1024.0*1024.0; break }
-            'mb' { $mul = 1024.0*1024.0; break }
-            'g'  { $mul = 1024.0*1024.0*1024.0; break }
-            'gb' { $mul = 1024.0*1024.0*1024.0; break }
-            't'  { $mul = 1024.0*1024.0*1024.0*1024.0; break }
-            'tb' { $mul = 1024.0*1024.0*1024.0*1024.0; break }
+            'm' { $mul = 1024.0 * 1024.0; break }
+            'mb' { $mul = 1024.0 * 1024.0; break }
+            'g' { $mul = 1024.0 * 1024.0 * 1024.0; break }
+            'gb' { $mul = 1024.0 * 1024.0 * 1024.0; break }
+            't' { $mul = 1024.0 * 1024.0 * 1024.0 * 1024.0; break }
+            'tb' { $mul = 1024.0 * 1024.0 * 1024.0 * 1024.0; break }
             default { $mul = 1.0; break }
         }
 
         $bytes = [int64][math]::Floor($num * $mul)
         if ($bytes -lt 0) { return [int64]0 }
         return $bytes
-    } catch {
+    }
+    catch {
         return [int64]0
     }
 }
@@ -1356,7 +1381,8 @@ function Get-FileTypeLabelFromPath([string]$Path) {
     try {
         $ext = Safe-ToLower ([System.IO.Path]::GetExtension($Path))
         if ($ext -ne "" -and $script:ExtToTypeLabel.ContainsKey($ext)) { return [string]$script:ExtToTypeLabel[$ext] }
-    } catch {}
+    }
+    catch {}
     if ([string]::IsNullOrWhiteSpace($ext)) { return "Other (no extension)" }
     return ("Other ({0})" -f $ext)
 }
@@ -1396,9 +1422,9 @@ function Search-Files {
 
     )
 
-$bodyAst = $null
+    $bodyAst = $null
 
-    $tagAst  = $null
+    $tagAst = $null
 
 
 
@@ -1422,9 +1448,10 @@ $bodyAst = $null
 
             # Tag filter vide => fichiers sans tags
 
-            $tagAst = @{ type='leaf'; value='__EMPTY__' }
+            $tagAst = @{ type = 'leaf'; value = '__EMPTY__' }
 
-        } else {
+        }
+        else {
 
             $TagFilter = Normalize-TagFilterForParse $TagFilter
 
@@ -1442,7 +1469,7 @@ $bodyAst = $null
 
 
 
-        $extAllowed = @()
+    $extAllowed = @()
     if ((Get-Count $AllowedExts) -gt 0) {
         $extAllowed = @(
             $AllowedExts | ForEach-Object {
@@ -1455,53 +1482,58 @@ $bodyAst = $null
         )
     }
 
-# File enumeration (optimized for network shares):
-# - On network paths, we build a cached full index once, then filter locally by extension / tags / body.
-#   This makes subsequent searches (changing type/filters) much faster.
-# - On local disks, we keep the standard traversal (no caching).
-$files = $null
-$extFiltered = $false
-if ($NoSubdirs) {
-    $allIndex = $null  # NoSubdirs does not need cached recursive index
-} else {
-    $allIndex = Get-OrBuild-DirFileIndex -Dir $Dir -CancelCheck $CancelCheck -ForceRefresh:$ForceRefresh
-}
-if ($null -ne $allIndex) {
+    # File enumeration (optimized for network shares):
+    # - On network paths, we build a cached full index once, then filter locally by extension / tags / body.
+    #   This makes subsequent searches (changing type/filters) much faster.
+    # - On local disks, we keep the standard traversal (no caching).
+    $files = $null
+    $extFiltered = $false
+    if ($NoSubdirs) {
+        $allIndex = $null  # NoSubdirs does not need cached recursive index
+    }
+    else {
+        $allIndex = Get-OrBuild-DirFileIndex -Dir $Dir -CancelCheck $CancelCheck -ForceRefresh:$ForceRefresh
+    }
+    if ($null -ne $allIndex) {
 
-    if ((Get-Count $extAllowed) -gt 0) {
+        if ((Get-Count $extAllowed) -gt 0) {
 
-        $hs = $null
-        try {
-            $hs = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
-            foreach ($e in $extAllowed) {
-                if (-not [string]::IsNullOrWhiteSpace($e)) { [void]$hs.Add($e) }
+            $hs = $null
+            try {
+                $hs = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+                foreach ($e in $extAllowed) {
+                    if (-not [string]::IsNullOrWhiteSpace($e)) { [void]$hs.Add($e) }
+                }
             }
-        } catch { $hs = $null }
+            catch { $hs = $null }
 
-        if ($null -ne $hs) {
-            $tmp = New-Object System.Collections.Generic.List[System.IO.FileInfo]
-            foreach ($fi in $allIndex) {
-                if ($CancelCheck -and (& $CancelCheck)) { break }
-                try { if (-not $hs.Contains($fi.Extension)) { continue } } catch { continue }
-                [void]$tmp.Add($fi)
+            if ($null -ne $hs) {
+                $tmp = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+                foreach ($fi in $allIndex) {
+                    if ($CancelCheck -and (& $CancelCheck)) { break }
+                    try { if (-not $hs.Contains($fi.Extension)) { continue } } catch { continue }
+                    [void]$tmp.Add($fi)
+                }
+                $files = $tmp.ToArray()
+                $extFiltered = $true
             }
-            $files = $tmp.ToArray()
-            $extFiltered = $true
-        } else {
+            else {
+                $files = @($allIndex)
+            }
+
+        }
+        else {
+
             $files = @($allIndex)
+
         }
 
-    } else {
+    }
+    else {
 
-        $files = @($allIndex)
+        $files = Get-FilesRecursiveSafe -Dir $Dir -AllowedExtsLower $extAllowed -CancelCheck $CancelCheck -NoSubdirs:([bool]$NoSubdirs)
 
     }
-
-} else {
-
-    $files = Get-FilesRecursiveSafe -Dir $Dir -AllowedExtsLower $extAllowed -CancelCheck $CancelCheck -NoSubdirs:([bool]$NoSubdirs)
-
-}
 
 
     # Ensure extension filtering is applied consistently (including NoSubdirs / non-cached enumeration).
@@ -1510,7 +1542,8 @@ if ($null -ne $allIndex) {
         try {
             $hs2 = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
             foreach ($e in $extAllowed) { if (-not [string]::IsNullOrWhiteSpace($e)) { [void]$hs2.Add([string]$e) } }
-        } catch { $hs2 = $null }
+        }
+        catch { $hs2 = $null }
 
         if ($null -ne $hs2) {
             $tmp2 = New-Object System.Collections.Generic.List[System.IO.FileInfo]
@@ -1518,7 +1551,8 @@ if ($null -ne $allIndex) {
                 if ($CancelCheck -and (& $CancelCheck)) { break }
                 try {
                     if (-not $hs2.Contains($fi.Extension)) { continue }
-                } catch { continue }
+                }
+                catch { continue }
                 [void]$tmp2.Add($fi)
             }
             $files = $tmp2.ToArray()
@@ -1537,9 +1571,9 @@ if ($null -ne $allIndex) {
 
         if ($CancelCheck -and (& $CancelCheck)) { break }
 
-$nameNoExt = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
+        $nameNoExt = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
 
-        $body   = Get-BodyFromNameNoExt $nameNoExt
+        $body = Get-BodyFromNameNoExt $nameNoExt
 
         $tagsArr = Normalize-Tags (Get-TagsFromNameNoExt $nameNoExt)
 
@@ -1561,7 +1595,8 @@ $nameNoExt = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
 
                 if ((Get-Count $tagsArr) -gt 0) { continue }
 
-            } else {
+            }
+            else {
 
                 $leaf = Make-LeafEval-ForTags $tagsArr
 
@@ -1577,15 +1612,15 @@ $nameNoExt = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
 
         try { $created = $f.CreationTime } catch { $created = $null }
 
-$lastMod = $null
+        $lastMod = $null
 
-try { $lastMod = $f.LastWriteTime } catch { $lastMod = $null }
+        try { $lastMod = $f.LastWriteTime } catch { $lastMod = $null }
 
 
 
-$sizeBytes = 0
+        $sizeBytes = 0
 
-try { $sizeBytes = [Int64]$f.Length } catch { $sizeBytes = 0 }
+        try { $sizeBytes = [Int64]$f.Length } catch { $sizeBytes = 0 }
 
 
 
@@ -1604,7 +1639,7 @@ try { $sizeBytes = [Int64]$f.Length } catch { $sizeBytes = 0 }
         }
 
 
-$ftLabel = Get-FileTypeLabelFromPath $f.FullName
+        $ftLabel = Get-FileTypeLabelFromPath $f.FullName
 
 
 
@@ -1675,7 +1710,7 @@ function Search-PathsNoSubdirsection {
     $out = New-Object System.Collections.Generic.List[object]
 
     $bodyAst = $null
-    $tagAst  = $null
+    $tagAst = $null
 
     if ($UseBody -and -not [string]::IsNullOrWhiteSpace($BodyFilter)) {
         $bt = Tokenize-Expr $BodyFilter
@@ -1684,8 +1719,9 @@ function Search-PathsNoSubdirsection {
 
     if ($UseTag) {
         if ([string]::IsNullOrWhiteSpace($TagFilter)) {
-            $tagAst = @{ type='leaf'; value='__EMPTY__' }
-        } else {
+            $tagAst = @{ type = 'leaf'; value = '__EMPTY__' }
+        }
+        else {
             $tt = Tokenize-Expr $TagFilter
             if ((Get-Count $tt) -gt 0) { $tagAst = Parse-Expr $tt }
         }
@@ -1707,7 +1743,8 @@ function Search-PathsNoSubdirsection {
             try {
                 $ext = Safe-ToLower $f.Extension
                 if (-not $extAllowed.Contains($ext)) { continue }
-            } catch { continue }
+            }
+            catch { continue }
         }
 
         $created = $null
@@ -1745,7 +1782,8 @@ function Search-PathsNoSubdirsection {
         if ($UseTag -and $null -ne $tagAst) {
             if ($tagAst.type -eq 'leaf' -and $tagAst.value -eq '__EMPTY__') {
                 if ((Get-Count $tagsArr) -gt 0) { continue }
-            } else {
+            }
+            else {
                 $leaf = Make-LeafEval-ForTags $tagsArr
                 if (-not (Eval-Ast $tagAst $leaf)) { continue }
             }
@@ -1784,7 +1822,7 @@ function Scan-AllTagsInDir([string]$Dir, [string[]]$AllowedExts) {
 
 
 
-        $extAllowed = @()
+    $extAllowed = @()
     if ((Get-Count $AllowedExts) -gt 0) {
         $extAllowed = @(
             $AllowedExts | ForEach-Object {
@@ -1797,7 +1835,7 @@ function Scan-AllTagsInDir([string]$Dir, [string[]]$AllowedExts) {
         )
     }
 
-$set = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    $set = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 
     $files = Get-FilesRecursiveSafe -Dir $Dir
 
@@ -1819,7 +1857,8 @@ $set = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]
 
             foreach ($t in $tags) { [void]$set.Add($t) }
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -1854,18 +1893,20 @@ if (-not $script:_SettingsHooked) {
     $script:_SettingsHooked = $true
     try {
         $form.Add_Shown({
-            if (-not $script:_SettingsRestoredOnce) {
-                $script:_SettingsRestoredOnce = $true
-                Restore-Settings
-            }
-        })
+                if (-not $script:_SettingsRestoredOnce) {
+                    $script:_SettingsRestoredOnce = $true
+                    Restore-Settings
+                }
+            })
         $form.Add_FormClosing({
-            try {
-                _Dbg "FormClosing: saving settings..."
-                Save-Settings
-            } catch { }
-        })
-    } catch { }
+                try {
+                    _Dbg "FormClosing: saving settings..."
+                    Save-Settings
+                }
+                catch { }
+            })
+    }
+    catch { }
 }
 
 
@@ -1883,37 +1924,38 @@ $form.Padding = New-Object System.Windows.Forms.Padding(10)
 # Allow form-level key handling (Esc to interrupt search)
 $form.KeyPreview = $true
 $form.Add_KeyDown({
-    param($sender,$e)
-    try {
+        param($sender, $e)
+        try {
 
-        # ESC cancels an ongoing search
-        if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
-            if ($script:IsSearching) {
-                Request-InterruptSearch
+            # ESC cancels an ongoing search
+            if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
+                if ($script:IsSearching) {
+                    Request-InterruptSearch
+                    $e.SuppressKeyPress = $true
+                    $e.Handled = $true
+                    return
+                }
+            }
+
+            # F5 forces a rescan (refresh scan cache) with current criteria
+            if ($e.KeyCode -eq [System.Windows.Forms.Keys]::F5) {
+                try { Trigger-Search -ForceRefresh } catch { }
                 $e.SuppressKeyPress = $true
                 $e.Handled = $true
                 return
             }
-        }
 
-        # F5 forces a rescan (refresh scan cache) with current criteria
-        if ($e.KeyCode -eq [System.Windows.Forms.Keys]::F5) {
-            try { Trigger-Search -ForceRefresh } catch { }
-            $e.SuppressKeyPress = $true
-            $e.Handled = $true
-            return
-        }
+            # Ctrl+Y opens search history
+            if ($e.Control -and ($e.KeyCode -eq [System.Windows.Forms.Keys]::Y)) {
+                try { Show-SearchHistoryDialog } catch { }
+                $e.SuppressKeyPress = $true
+                $e.Handled = $true
+                return
+            }
 
-        # Ctrl+Y opens search history
-        if ($e.Control -and ($e.KeyCode -eq [System.Windows.Forms.Keys]::Y)) {
-            try { Show-SearchHistoryDialog } catch { }
-            $e.SuppressKeyPress = $true
-            $e.Handled = $true
-            return
         }
-
-    } catch { }
-})
+        catch { }
+    })
 # Status bar (added LAST to ensure it stays visible at the very bottom)
 
 $status = New-Object System.Windows.Forms.StatusStrip
@@ -1963,7 +2005,8 @@ $form.Controls.Add($status)
 function Set-Status([string]$msg) {
     try {
         if ($null -ne $stMsg) { $stMsg.Text = $msg }
-    } catch {}
+    }
+    catch {}
 }
 
 
@@ -1981,16 +2024,19 @@ function Set-Info([string]$msg) {
     # Right status text (activity)
     try {
         if ($null -ne $stInfo) { $stInfo.Text = $msg }
-    } catch { }
+    }
+    catch { }
 }
 function UI-Invoke([scriptblock]$Action) {
     try {
         if ($form -and $form.IsHandleCreated -and $form.InvokeRequired) {
-            $null = $form.BeginInvoke([Action]{ & $Action })
-        } else {
+            $null = $form.BeginInvoke([Action] { & $Action })
+        }
+        else {
             & $Action
         }
-    } catch {
+    }
+    catch {
         try { & $Action } catch { }
     }
 }
@@ -2002,7 +2048,8 @@ function Progress-Start([string]$Text, [switch]$Indeterminate) {
             if ($Indeterminate) {
                 $script:stProg.Style = [System.Windows.Forms.ProgressBarStyle]::Marquee
                 $script:stProg.MarqueeAnimationSpeed = 25
-            } else {
+            }
+            else {
                 $script:stProg.Style = [System.Windows.Forms.ProgressBarStyle]::Continuous
                 $script:stProg.Value = 0
             }
@@ -2026,7 +2073,8 @@ function Progress-Update([int]$Percent, [string]$Text) {
             $script:stProgText.Visible = $true
             if ([string]::IsNullOrWhiteSpace($Text)) {
                 $script:stProgText.Text = "$p%"
-            } else {
+            }
+            else {
                 $script:stProgText.Text = [string]$Text
             }
         }
@@ -2053,7 +2101,8 @@ function Set-EverythingInfo([string]$msg) {
     # Middle-right status text (Everything indicator)
     try {
         if ($null -ne $stEverything) { $stEverything.Text = $msg }
-    } catch { }
+    }
+    catch { }
 }
 
 function Get-EverythingStatusText {
@@ -2063,7 +2112,8 @@ function Get-EverythingStatusText {
         $p = Get-Process -Name Everything -ErrorAction SilentlyContinue
         if (-not $p) { return "Everything: not running" }
         return "Everything: OK"
-    } catch {
+    }
+    catch {
         return "Everything: unknown"
     }
 }
@@ -2085,7 +2135,8 @@ function Get-DisplayedRowCount {
             }
             return $n
         }
-    } catch { }
+    }
+    catch { }
     try { return (Get-Count $script:CurrentItems) } catch { return 0 }
 }
 
@@ -2112,16 +2163,19 @@ function Update-FoundCountStatus {
         }
 
         Set-Status ("Search: {0} file(s) found" -f $n)
-    } catch {
+    }
+    catch {
         try {
             $fallback = 0
             try { $fallback = (Get-Count $script:CurrentItems) } catch { $fallback = 0 }
             if ($UpdatingView) {
                 Set-Status ("Displayed: {0} file(s)" -f $fallback)
-            } else {
+            }
+            else {
                 Set-Status ("Search: {0} file(s) found" -f $fallback)
             }
-        } catch { }
+        }
+        catch { }
     }
 }
 
@@ -2233,14 +2287,15 @@ $gbSearch.Controls.Add($chkNoSubdirs)
 
 # Enter in Directory triggers search
 $txtDir.Add_KeyDown({
-    param($sender, $e)
-    try {
-        if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
-            $e.SuppressKeyPress = $true
-            Trigger-Search
+        param($sender, $e)
+        try {
+            if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+                $e.SuppressKeyPress = $true
+                Trigger-Search
+            }
         }
-    } catch { }
-})
+        catch { }
+    })
 $btnBrowse = New-Object System.Windows.Forms.Button
 
 $btnBrowse.Text = "Br&owse (Ctrl+O)"
@@ -2290,7 +2345,8 @@ function Update-SearchLayout {
                 if ($b) { $b.Left = [Math]::Max(10, $btnX - $b.Width) }
             }
         }
-    } catch { }
+    }
+    catch { }
 }
 
 # Reflow on resize + at startup
@@ -2300,21 +2356,23 @@ Update-SearchLayout
 
 # Ensure layout is correct once the form is actually shown (ClientSize is final then)
 $form.Add_Shown({
-    try {
-       $form.BeginInvoke([Action]{
-    try {
-        Update-SearchLayout
+        try {
+            $form.BeginInvoke([Action] {
+                    try {
+                        Update-SearchLayout
 
-        if ($chkNoSubdirs)  { $chkNoSubdirs.BringToFront() }
-        if ($chkEverything) { $chkEverything.BringToFront() }
+                        if ($chkNoSubdirs) { $chkNoSubdirs.BringToFront() }
+                        if ($chkEverything) { $chkEverything.BringToFront() }
 
-        if ($btnRescan)  { $btnRescan.Visible = $true;  $btnRescan.BringToFront() }
-        if ($btnHistory) { $btnHistory.Visible = $true; $btnHistory.BringToFront() }
-    } catch { }
-}) | Out-Null
+                        if ($btnRescan) { $btnRescan.Visible = $true; $btnRescan.BringToFront() }
+                        if ($btnHistory) { $btnHistory.Visible = $true; $btnHistory.BringToFront() }
+                    }
+                    catch { }
+                }) | Out-Null
 
-    } catch { }
-})
+        }
+        catch { }
+    })
 
 
 
@@ -2386,11 +2444,12 @@ $gbSearch.Controls.Add($comboTypes)
 
 # Auto-refresh search when file type changes (guarded during initialization).
 $comboTypes.add_SelectedIndexChanged({
-    try {
-        if ($script:IsInitializing) { return }
-        Trigger-Search
-    } catch { }
-})
+        try {
+            if ($script:IsInitializing) { return }
+            Trigger-Search
+        }
+        catch { }
+    })
 
 $chkTag = New-Object System.Windows.Forms.CheckBox
 
@@ -2512,9 +2571,10 @@ $gbSearch.Controls.Add($dtBefore)
 try {
     if ($txtMinSize) { $txtMinSize.Add_KeyDown($__enterTriggersSearch) }
     if ($txtMaxSize) { $txtMaxSize.Add_KeyDown($__enterTriggersSearch) }
-    if ($dtAfter)    { $dtAfter.Add_KeyDown($__enterTriggersSearch) }
-    if ($dtBefore)   { $dtBefore.Add_KeyDown($__enterTriggersSearch) }
-} catch { }
+    if ($dtAfter) { $dtAfter.Add_KeyDown($__enterTriggersSearch) }
+    if ($dtBefore) { $dtBefore.Add_KeyDown($__enterTriggersSearch) }
+}
+catch { }
 
 $chkEverything = New-Object System.Windows.Forms.CheckBox
 $chkEverything.Text = "Use Everything (fast)"
@@ -2525,91 +2585,94 @@ $gbSearch.Controls.Add($chkEverything)
 Update-SearchLayout  # ensure proper placement (after dtBefore exists)
 
 $chkEverything.Add_CheckedChanged({
-    try {
-        if (-not $script:EverythingHintShown) { $script:EverythingHintShown = $false }
+        try {
+            if (-not $script:EverythingHintShown) { $script:EverythingHintShown = $false }
 
-        if ($chkEverything.Checked) {
+            if ($chkEverything.Checked) {
 
-            $status = Get-EverythingStatusText
-            Set-EverythingInfo $status
+                $status = Get-EverythingStatusText
+                Set-EverythingInfo $status
 
-            if ($status -eq "Everything: ES not found") {
-                if (-not $script:EverythingHintShown) {
-                    $script:EverythingHintShown = $true
-                    [System.Windows.Forms.MessageBox]::Show(
-                        "Everything is not configured on this PC.`r`n`r`n" +
-                        "To enable fast network searches:`r`n" +
-                        "1) Install Everything (Voidtools) and start it.`r`n" +
-                        "2) Install ES (Everything CLI) (es.exe).`r`n" +
-                        "   - Download ES (Everything CLI) from voidtools.com`r`n" +
-                        "   - Put es.exe in a folder present in PATH, or next to this script.`r`n`r`n" +
-                        "Then restart this app and check 'Use Everything (fast)' again.",
-                        "Everything / ES not found",
-                        [System.Windows.Forms.MessageBoxButtons]::OK,
-                        [System.Windows.Forms.MessageBoxIcon]::Information
-                    ) | Out-Null
+                if ($status -eq "Everything: ES not found") {
+                    if (-not $script:EverythingHintShown) {
+                        $script:EverythingHintShown = $true
+                        [System.Windows.Forms.MessageBox]::Show(
+                            "Everything is not configured on this PC.`r`n`r`n" +
+                            "To enable fast network searches:`r`n" +
+                            "1) Install Everything (Voidtools) and start it.`r`n" +
+                            "2) Install ES (Everything CLI) (es.exe).`r`n" +
+                            "   - Download ES (Everything CLI) from voidtools.com`r`n" +
+                            "   - Put es.exe in a folder present in PATH, or next to this script.`r`n`r`n" +
+                            "Then restart this app and check 'Use Everything (fast)' again.",
+                            "Everything / ES not found",
+                            [System.Windows.Forms.MessageBoxButtons]::OK,
+                            [System.Windows.Forms.MessageBoxIcon]::Information
+                        ) | Out-Null
+                    }
+                    $chkEverything.Checked = $false
+                    return
                 }
-                $chkEverything.Checked = $false
-                return
+
+                if ($status -eq "Everything: not running") {
+                    if (-not $script:EverythingHintShown) {
+                        $script:EverythingHintShown = $true
+                        [System.Windows.Forms.MessageBox]::Show(
+                            "Everything is installed but not running.`r`n`r`n" +
+                            "Please start Everything, then check 'Use Everything (fast)' again.",
+                            "Everything not running",
+                            [System.Windows.Forms.MessageBoxButtons]::OK,
+                            [System.Windows.Forms.MessageBoxIcon]::Information
+                        ) | Out-Null
+                    }
+                    $chkEverything.Checked = $false
+                    return
+                }
+
+            }
+            else {
+                Set-EverythingInfo (Get-EverythingStatusText)
             }
 
-            if ($status -eq "Everything: not running") {
-                if (-not $script:EverythingHintShown) {
-                    $script:EverythingHintShown = $true
-                    [System.Windows.Forms.MessageBox]::Show(
-                        "Everything is installed but not running.`r`n`r`n" +
-                        "Please start Everything, then check 'Use Everything (fast)' again.",
-                        "Everything not running",
-                        [System.Windows.Forms.MessageBoxButtons]::OK,
-                        [System.Windows.Forms.MessageBoxIcon]::Information
-                    ) | Out-Null
-                }
-                $chkEverything.Checked = $false
-                return
-            }
-
-        } else {
-            Set-EverythingInfo (Get-EverythingStatusText)
+            Update-SearchLayout
         }
-
-        Update-SearchLayout
-    } catch { }
-})
+        catch { }
+    })
 # Si on sélectionne un tag trouvé : activer le filtre Tag + relancer la recherche
 
 $comboFoundTags.Add_SelectedIndexChanged({
 
-    try {
+        try {
 
-        if ($script:SuppressFoundTagsEvent) { return }
+            if ($script:SuppressFoundTagsEvent) { return }
 
-        $sel = $comboFoundTags.SelectedItem
+            $sel = $comboFoundTags.SelectedItem
 
-        if ($null -ne $sel -and ($sel.ToString().Trim().Length -gt 0)) {
+            if ($null -ne $sel -and ($sel.ToString().Trim().Length -gt 0)) {
 
-            if ($null -ne $chkTag) { $chkTag.Checked = $true }
+                if ($null -ne $chkTag) { $chkTag.Checked = $true }
 
-            if ($null -ne $txtTag) {
+                if ($null -ne $txtTag) {
 
-                $val = $sel.ToString()
+                    $val = $sel.ToString()
 
-                # If the tag contains spaces, wrap it in quotes so the parser treats it as a single tag token.
+                    # If the tag contains spaces, wrap it in quotes so the parser treats it as a single tag token.
 
-                if ($val -match '\s') { $val = '"' + ($val -replace '"','""') + '"' }
+                    if ($val -match '\s') { $val = '"' + ($val -replace '"', '""') + '"' }
 
-                $txtTag.Text = $val
+                    $txtTag.Text = $val
+
+                }
+
+                if (Get-Command Trigger-Search -ErrorAction SilentlyContinue) { Trigger-Search }
+
+                elseif (Get-Command Run-SearchAndFillGrid -ErrorAction SilentlyContinue) { Run-SearchAndFillGrid }
 
             }
 
-            if (Get-Command Trigger-Search -ErrorAction SilentlyContinue) { Trigger-Search }
-
-            elseif (Get-Command Run-SearchAndFillGrid -ErrorAction SilentlyContinue) { Run-SearchAndFillGrid }
-
         }
+        catch {}
 
-    } catch {}
-
-})
+    })
 
 
 
@@ -2633,8 +2696,8 @@ $btnRescan.Size = New-Object System.Drawing.Size(110, 24)
 $btnRescan.Location = New-Object System.Drawing.Point(860, 18)
 $btnRescan.Anchor = "Top,Right"
 $btnRescan.Add_Click({
-    try { Trigger-Search -ForceRefresh } catch { }
-})
+        try { Trigger-Search -ForceRefresh } catch { }
+    })
 $gbSearch.Controls.Add($btnRescan)
 
 # Search history (Ctrl+Y)
@@ -2644,8 +2707,8 @@ $btnHistory.Size = New-Object System.Drawing.Size(110, 24)
 $btnHistory.Location = New-Object System.Drawing.Point(860, 78)
 $btnHistory.Anchor = "Top,Right"
 $btnHistory.Add_Click({
-    try { Show-SearchHistoryDialog } catch { }
-})
+        try { Show-SearchHistoryDialog } catch { }
+    })
 $gbSearch.Controls.Add($btnHistory)
 
 
@@ -2663,23 +2726,25 @@ $__enterTriggersSearch = {
             $e.SuppressKeyPress = $true
             Trigger-Search
         }
-    } catch { }
+    }
+    catch { }
 }
 
 if ($txtMinSize) { $txtMinSize.Add_KeyDown($__enterTriggersSearch) }
 if ($txtMaxSize) { $txtMaxSize.Add_KeyDown($__enterTriggersSearch) }
-if ($dtAfter)    { $dtAfter.Add_KeyDown($__enterTriggersSearch) }
-if ($dtBefore)   { $dtBefore.Add_KeyDown($__enterTriggersSearch) }
+if ($dtAfter) { $dtAfter.Add_KeyDown($__enterTriggersSearch) }
+if ($dtBefore) { $dtBefore.Add_KeyDown($__enterTriggersSearch) }
 
 # Pressing Enter in Directory triggers Search
 $txtDir.Add_KeyDown({
-    try {
-        if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
-            $_.SuppressKeyPress = $true
-            $btnSearch.PerformClick()
+        try {
+            if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+                $_.SuppressKeyPress = $true
+                $btnSearch.PerformClick()
+            }
         }
-    } catch {}
-})
+        catch {}
+    })
 
 
 $btnHelp = New-Object System.Windows.Forms.Button
@@ -2703,7 +2768,7 @@ function Layout-SearchControls {
 
     try {
 
-        $padLeft  = 10
+        $padLeft = 10
 
         $padRight = 10
 
@@ -2733,19 +2798,19 @@ function Layout-SearchControls {
 
         $btnBrowse.Location = New-Object System.Drawing.Point($btnX2, 18)
 
-        $btnBrowse.Size     = New-Object System.Drawing.Size($btnW, $btnH)
+        $btnBrowse.Size = New-Object System.Drawing.Size($btnW, $btnH)
 
 
 
         $btnSearch.Location = New-Object System.Drawing.Point($btnX2, 48)
 
-        $btnSearch.Size     = New-Object System.Drawing.Size($btnW, $btnH)
+        $btnSearch.Size = New-Object System.Drawing.Size($btnW, $btnH)
 
 
 
-        $btnHelp.Location   = New-Object System.Drawing.Point($btnX2, 78)
+        $btnHelp.Location = New-Object System.Drawing.Point($btnX2, 78)
 
-        $btnHelp.Size       = New-Object System.Drawing.Size($btnW, $btnH)
+        $btnHelp.Size = New-Object System.Drawing.Size($btnW, $btnH)
 
 
 
@@ -2755,7 +2820,7 @@ function Layout-SearchControls {
 
             $btnRescan.Location = New-Object System.Drawing.Point($btnX1, 18)
 
-            $btnRescan.Size     = New-Object System.Drawing.Size($btnW, $btnH)
+            $btnRescan.Size = New-Object System.Drawing.Size($btnW, $btnH)
 
         }
 
@@ -2763,7 +2828,7 @@ function Layout-SearchControls {
 
             $btnHistory.Location = New-Object System.Drawing.Point($btnX1, 48)
 
-            $btnHistory.Size     = New-Object System.Drawing.Size($btnW, $btnH)
+            $btnHistory.Size = New-Object System.Drawing.Size($btnW, $btnH)
 
         }
 
@@ -2775,7 +2840,7 @@ function Layout-SearchControls {
 
         $txtDir.Location = New-Object System.Drawing.Point(70, 20)
 
-        $txtDir.Width    = [Math]::Max(120, $rightEdge - 70)
+        $txtDir.Width = [Math]::Max(120, $rightEdge - 70)
 
 
 
@@ -2785,9 +2850,9 @@ function Layout-SearchControls {
 
         $comboTypes.Location = New-Object System.Drawing.Point($comboTypesX, 50)
 
-        $comboTypes.Width    = [Math]::Max(140, $rightEdge - $comboTypesX)
+        $comboTypes.Width = [Math]::Max(140, $rightEdge - $comboTypesX)
 
-        $lblTypes.Location   = New-Object System.Drawing.Point([Math]::Max(70, $comboTypesX - 62), 54)
+        $lblTypes.Location = New-Object System.Drawing.Point([Math]::Max(70, $comboTypesX - 62), 54)
 
 
 
@@ -2801,7 +2866,7 @@ function Layout-SearchControls {
 
         $btnResetBody.Location = New-Object System.Drawing.Point([Math]::Max(70, $lblTypes.Left - $gapX - $resetW), 48)
 
-        $btnResetBody.Size     = New-Object System.Drawing.Size($resetW, $btnH)
+        $btnResetBody.Size = New-Object System.Drawing.Size($resetW, $btnH)
 
 
 
@@ -2815,9 +2880,9 @@ function Layout-SearchControls {
 
         $comboFoundTags.Location = New-Object System.Drawing.Point($comboFoundX, 80)
 
-        $comboFoundTags.Width    = [Math]::Max(140, $rightEdge - $comboFoundX)
+        $comboFoundTags.Width = [Math]::Max(140, $rightEdge - $comboFoundX)
 
-        $lblFound.Location       = New-Object System.Drawing.Point([Math]::Max(70, $comboFoundX - 70), 84)
+        $lblFound.Location = New-Object System.Drawing.Point([Math]::Max(70, $comboFoundX - 70), 84)
 
 
 
@@ -2831,7 +2896,7 @@ function Layout-SearchControls {
 
         $btnResetTag.Location = New-Object System.Drawing.Point([Math]::Max(70, $lblFound.Left - $gapX - $resetW), 78)
 
-        $btnResetTag.Size     = New-Object System.Drawing.Size($resetW, $btnH)
+        $btnResetTag.Size = New-Object System.Drawing.Size($resetW, $btnH)
 
 
 
@@ -2845,7 +2910,7 @@ function Layout-SearchControls {
 
         $txtBody.Anchor = "Top,Left"
 
-        $txtTag.Anchor  = "Top,Left"
+        $txtTag.Anchor = "Top,Left"
 
 
 
@@ -2859,9 +2924,10 @@ function Layout-SearchControls {
 
         $btnSearch.Anchor = "Top,Right"
 
-        $btnHelp.Anchor   = "Top,Right"
+        $btnHelp.Anchor = "Top,Right"
 
-    } catch {}
+    }
+    catch {}
 
 }
 
@@ -2885,25 +2951,25 @@ $grid.Dock = "Fill"
 
 $grid.ReadOnly = $true
 
-$grid.AllowUserToAddRows    = $false
+$grid.AllowUserToAddRows = $false
 
 $grid.AllowUserToDeleteRows = $false
 
-$grid.SelectionMode         = "FullRowSelect"
+$grid.SelectionMode = "FullRowSelect"
 
-$grid.MultiSelect           = $true
+$grid.MultiSelect = $true
 
-$grid.RowHeadersVisible     = $false
+$grid.RowHeadersVisible = $false
 
-$grid.AutoGenerateColumns   = $false
+$grid.AutoGenerateColumns = $false
 
 $grid.AllowUserToOrderColumns = $true
 
-$grid.AllowUserToResizeRows   = $false
+$grid.AllowUserToResizeRows = $false
 
-$grid.ColumnHeadersVisible    = $true
+$grid.ColumnHeadersVisible = $true
 
-$grid.ScrollBars              = "Both"
+$grid.ScrollBars = "Both"
 
 $gbResults.Controls.Add($grid)
 
@@ -2919,7 +2985,8 @@ function Lock-GridRowSizing {
             try { $grid.RowTemplate.Resizable = [System.Windows.Forms.DataGridViewTriState]::False } catch {}
             try { $grid.RowHeadersWidthSizeMode = [System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode]::DisableResizing } catch {}
         }
-    } catch { }
+    }
+    catch { }
 }
 
 # Lock row sizing once right after grid creation
@@ -3111,29 +3178,29 @@ function Make-ActionButton([string]$text, [int]$x, [int]$y) {
 
 # Buttons order matches context menu order
 
-$btnExecute     = Make-ActionButton "&Execute (Ctrl+E)"          10  28
+$btnExecute = Make-ActionButton "&Execute (Ctrl+E)"          10  28
 
-$btnOpenFolder  = Make-ActionButton "Open &folder (Ctrl+F)"      150 28
+$btnOpenFolder = Make-ActionButton "Open &folder (Ctrl+F)"      150 28
 
-$btnDescribe    = Make-ActionButton "&Description (Ctrl+D)"      290 28
+$btnDescribe = Make-ActionButton "&Description (Ctrl+D)"      290 28
 
-$btnMove        = Make-ActionButton "&Move file(s)... (Ctrl+M)"       430 28
+$btnMove = Make-ActionButton "&Move file(s)... (Ctrl+M)"       430 28
 
-$btnDelete      = Make-ActionButton "De&lete file(s) (Ctrl+L)"      570 28
+$btnDelete = Make-ActionButton "De&lete file(s) (Ctrl+L)"      570 28
 
-$btnCopyPath    = Make-ActionButton "&Copy path (Ctrl+C)"        710 28
+$btnCopyPath = Make-ActionButton "&Copy path (Ctrl+C)"        710 28
 
 
 
-$btnBodyRename  = Make-ActionButton "&Body rename (Ctrl+B)"      10  60
+$btnBodyRename = Make-ActionButton "&Body rename (Ctrl+B)"      10  60
 
-$btnAdd         = Make-ActionButton "&Add tags (Ctrl+A)"         150 60
+$btnAdd = Make-ActionButton "&Add tags (Ctrl+A)"         150 60
 
-$btnRemove      = Make-ActionButton "&Remove tags (Ctrl+R)"      290 60
+$btnRemove = Make-ActionButton "&Remove tags (Ctrl+R)"      290 60
 
-$btnCopyTags    = Make-ActionButton "Copy &tags (Ctrl+T)"        430 60
+$btnCopyTags = Make-ActionButton "Copy &tags (Ctrl+T)"        430 60
 
-$btnDup         = Make-ActionButton "Show d&uplicates (Ctrl+U)"       570 60
+$btnDup = Make-ActionButton "Show d&uplicates (Ctrl+U)"       570 60
 
 # Optional: confirm duplicates by hash (accurate but slower; only hashes within candidate groups)
 $chkDupHash = New-Object System.Windows.Forms.CheckBox
@@ -3143,20 +3210,21 @@ $chkDupHash.Location = New-Object System.Drawing.Point(710, 64)
 $chkDupHash.Anchor = "Top,Left"
 $chkDupHash.Checked = [bool]$script:DupUseHash
 $chkDupHash.Add_CheckedChanged({
-    try {
-        # Cancel any running duplicate computation (hashing) before recomputing.
-        try { Cancel-DuplicateWorker } catch { }
+        try {
+            # Cancel any running duplicate computation (hashing) before recomputing.
+            try { Cancel-DuplicateWorker } catch { }
 
-        $script:DupUseHash = [bool]$chkDupHash.Checked
-        if ($script:DupModeEnabled) { Do-FindDuplicates }
-    } catch { }
-})
+            $script:DupUseHash = [bool]$chkDupHash.Checked
+            if ($script:DupModeEnabled) { Do-FindDuplicates }
+        }
+        catch { }
+    })
 $gbActions.Controls.Add($chkDupHash)
 
 
 
 
-foreach ($b in @($btnExecute,$btnOpenFolder,$btnDescribe,$btnMove,$btnDelete,$btnCopyPath,$btnBodyRename,$btnAdd,$btnRemove,$btnCopyTags,$btnDup)) {
+foreach ($b in @($btnExecute, $btnOpenFolder, $btnDescribe, $btnMove, $btnDelete, $btnCopyPath, $btnBodyRename, $btnAdd, $btnRemove, $btnCopyTags, $btnDup)) {
 
     $b.Anchor = "Top,Left"
 
@@ -3178,13 +3246,13 @@ $ctx = New-Object System.Windows.Forms.ContextMenuStrip
 
 
 
-function Add-CtxItem([string]$text, [scriptblock]$handler, [bool]$bold=$false) {
+function Add-CtxItem([string]$text, [scriptblock]$handler, [bool]$bold = $false) {
 
     $mi = New-Object System.Windows.Forms.ToolStripMenuItem
 
     $mi.Text = $text
     $mi.ShowShortcutKeys = $true
-if ($bold) {
+    if ($bold) {
 
         $mi.Font = New-Object System.Drawing.Font($mi.Font, [System.Drawing.FontStyle]::Bold)
 
@@ -3202,29 +3270,29 @@ $ctx.Add_Opening({ Enable-KeyboardCues $ctx })
 
 # L'ordre demandé
 
-Add-CtxItem "Execute file (Ctrl+E)"       { $btnExecute.PerformClick() } $true
+Add-CtxItem "Execute file (Ctrl+E)" { $btnExecute.PerformClick() } $true
 
-Add-CtxItem "Open &folder (Ctrl+F)"        { $btnOpenFolder.PerformClick() } $false
+Add-CtxItem "Open &folder (Ctrl+F)" { $btnOpenFolder.PerformClick() } $false
 
-Add-CtxItem "&Description (Ctrl+D)"        { $btnDescribe.PerformClick() } $false
+Add-CtxItem "&Description (Ctrl+D)" { $btnDescribe.PerformClick() } $false
 
 
-Add-CtxItem "&Move file(s)... (Ctrl+M)"     { $btnMove.PerformClick() } $false
-Add-CtxItem "De&lete file(s) (Ctrl+L)"        { $btnDelete.PerformClick() } $false
+Add-CtxItem "&Move file(s)... (Ctrl+M)" { $btnMove.PerformClick() } $false
+Add-CtxItem "De&lete file(s) (Ctrl+L)" { $btnDelete.PerformClick() } $false
 
-Add-CtxItem "&Copy path (Ctrl+C)"          { $btnCopyPath.PerformClick() } $false
+Add-CtxItem "&Copy path (Ctrl+C)" { $btnCopyPath.PerformClick() } $false
 
-Add-CtxItem "&Body rename (Ctrl+B)"        { $btnBodyRename.PerformClick() } $false
+Add-CtxItem "&Body rename (Ctrl+B)" { $btnBodyRename.PerformClick() } $false
 
 [void]$ctx.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 
 
 
-Add-CtxItem "&Add tags (Ctrl+A)"     { $btnAdd.PerformClick() } $false
+Add-CtxItem "&Add tags (Ctrl+A)" { $btnAdd.PerformClick() } $false
 
-Add-CtxItem "&Remove tags (Ctrl+R)"  { $btnRemove.PerformClick() } $false
+Add-CtxItem "&Remove tags (Ctrl+R)" { $btnRemove.PerformClick() } $false
 
-Add-CtxItem "Copy &tags (Ctrl+T)"    { $btnCopyTags.PerformClick() } $false
+Add-CtxItem "Copy &tags (Ctrl+T)" { $btnCopyTags.PerformClick() } $false
 
 
 
@@ -3261,31 +3329,32 @@ $grid.Add_MouseDown({
 
         Debug-Log ("Grid MouseDown: Button={0} X={1} Y={2}" -f $e.Button, $e.X, $e.Y)
 
-    try {
+        try {
 
-        if ($e.Button -eq [System.Windows.Forms.MouseButtons]::Right) {
+            if ($e.Button -eq [System.Windows.Forms.MouseButtons]::Right) {
 
-            $hit = $grid.HitTest($e.X, $e.Y)
+                $hit = $grid.HitTest($e.X, $e.Y)
 
-            if ($hit -and $hit.RowIndex -ge 0 -and $hit.RowIndex -lt $grid.Rows.Count) {
+                if ($hit -and $hit.RowIndex -ge 0 -and $hit.RowIndex -lt $grid.Rows.Count) {
 
-                if (-not $grid.Rows[$hit.RowIndex].Selected) {
+                    if (-not $grid.Rows[$hit.RowIndex].Selected) {
 
-                    $grid.ClearSelection()
+                        $grid.ClearSelection()
 
-                    $grid.Rows[$hit.RowIndex].Selected = $true
+                        $grid.Rows[$hit.RowIndex].Selected = $true
 
-                    $grid.CurrentCell = $grid.Rows[$hit.RowIndex].Cells[0]
+                        $grid.CurrentCell = $grid.Rows[$hit.RowIndex].Cells[0]
+
+                    }
 
                 }
 
             }
 
         }
+        catch {}
 
-    } catch {}
-
-})
+    })
 
 # ------------------------------ Fit grid columns ------------------------------
 
@@ -3301,7 +3370,7 @@ function Fit-GridColumns {
 
 
 
-        foreach ($name in @("Created","Body","Tags","TagCount")) {
+        foreach ($name in @("Created", "Body", "Tags", "TagCount")) {
 
             $c = $grid.Columns[$name]
 
@@ -3311,7 +3380,7 @@ function Fit-GridColumns {
 
 
 
-            if ($name -eq "Created"  -and $c.Width -gt 200) { $c.Width = 200 }
+            if ($name -eq "Created" -and $c.Width -gt 200) { $c.Width = 200 }
 
             if ($name -eq "TagCount" -and $c.Width -gt 120) { $c.Width = 120 }
 
@@ -3345,7 +3414,8 @@ function Fit-GridColumns {
 
         }
 
-    } catch {}
+    }
+    catch {}
 
 }
 
@@ -3367,7 +3437,8 @@ function Get-SelectedPaths {
 
             if ($null -ne $m -and $m.Path) { $paths += [string]$m.Path }
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -3437,7 +3508,8 @@ function Get-UnionTagsFromFiles([string[]]$Paths) {
 
             foreach ($t in $tags) { [void]$set.Add($t) }
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -3531,9 +3603,9 @@ function Show-RemoveTagsDialog([System.Windows.Forms.IWin32Window]$Owner, [strin
 
     $chkAll.Add_CheckedChanged({
 
-        $lb.Enabled = -not $chkAll.Checked
+            $lb.Enabled = -not $chkAll.Checked
 
-    })
+        })
 
 
 
@@ -3569,13 +3641,13 @@ function Show-RemoveTagsDialog([System.Windows.Forms.IWin32Window]$Owner, [strin
 
 
 
-$script:CurrentItems    = @()
+$script:CurrentItems = @()
 
 $script:LastSearchItems = @()  # last full search result list (pre-duplicates)
 
-$script:SortColumnName  = $null
+$script:SortColumnName = $null
 
-$script:SortAscending   = $true
+$script:SortAscending = $true
 
 
 
@@ -3634,22 +3706,24 @@ function Restore-SelectionAfterRefresh([string[]]$PreferredPaths, [int]$Fallback
         try {
 
             $targetRow = $null
-        if ($CurrentPath) {
-            foreach ($rr in $pickedRows) {
-                try {
-                    $p = $null
-                    try { $p = $rr.Cells["Path"].Value } catch { }
-                    if (-not $p) { try { $p = $rr.Cells["FullPath"].Value } catch { } }
-                    if ($p -and ($p.ToString() -ieq $CurrentPath.ToString())) { $targetRow = $rr; break }
-                } catch { }
+            if ($CurrentPath) {
+                foreach ($rr in $pickedRows) {
+                    try {
+                        $p = $null
+                        try { $p = $rr.Cells["Path"].Value } catch { }
+                        if (-not $p) { try { $p = $rr.Cells["FullPath"].Value } catch { } }
+                        if ($p -and ($p.ToString() -ieq $CurrentPath.ToString())) { $targetRow = $rr; break }
+                    }
+                    catch { }
+                }
             }
-        }
-        if (-not $targetRow) { $targetRow = $pickedRows[0] }
-        try { $grid.CurrentCell = $targetRow.Cells["Path"] } catch { try { $grid.CurrentCell = $targetRow.Cells[0] } catch { } }
+            if (-not $targetRow) { $targetRow = $pickedRows[0] }
+            try { $grid.CurrentCell = $targetRow.Cells["Path"] } catch { try { $grid.CurrentCell = $targetRow.Cells[0] } catch { } }
 
             $grid.FirstDisplayedScrollingRowIndex = [int]$pickedRows[0].Index
 
-        } catch {}
+        }
+        catch {}
 
         return
 
@@ -3669,7 +3743,8 @@ function Restore-SelectionAfterRefresh([string[]]$PreferredPaths, [int]$Fallback
 
             $grid.FirstDisplayedScrollingRowIndex = $i
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -3681,10 +3756,12 @@ function Get-SelectedPathsFromGrid {
             try {
                 $p = [string]$r.Cells["Path"].Value
                 if (-not [string]::IsNullOrWhiteSpace($p)) { $paths.Add($p) }
-            } catch {}
+            }
+            catch {}
         }
-    } catch {}
-    return ,($paths.ToArray())
+    }
+    catch {}
+    return , ($paths.ToArray())
 }
 
 function Apply-DuplicatesToGrid {
@@ -3697,7 +3774,8 @@ function Apply-DuplicatesToGrid {
                 $r.DefaultCellStyle.BackColor = [System.Drawing.Color]::Empty
                 $r.DefaultCellStyle.ForeColor = [System.Drawing.Color]::Empty
                 $r.Visible = $true
-            } catch {}
+            }
+            catch {}
         }
         return
     }
@@ -3715,13 +3793,16 @@ function Apply-DuplicatesToGrid {
                 $r.DefaultCellStyle.BackColor = $script:DupColorByGroup[$gid]
                 $r.DefaultCellStyle.ForeColor = [System.Drawing.Color]::Black
                 $r.Visible = $true
-            } catch {}
-        } else {
+            }
+            catch {}
+        }
+        else {
             try {
                 $r.DefaultCellStyle.BackColor = [System.Drawing.Color]::Empty
                 $r.DefaultCellStyle.ForeColor = [System.Drawing.Color]::Empty
                 if ($script:DupHideNonDup) { $r.Visible = $false } else { $r.Visible = $true }
-            } catch {}
+            }
+            catch {}
         }
     }
 }
@@ -3745,7 +3826,8 @@ function Fill-GridFromItems($items, [string[]]$PreferredPaths, [int]$FallbackInd
 
         foreach ($obj in $items) { Add-RowFromObj $obj }
 
-    } finally {
+    }
+    finally {
 
         $grid.ResumeLayout()
 
@@ -3768,7 +3850,8 @@ function Fill-GridFromItems($items, [string[]]$PreferredPaths, [int]$FallbackInd
         $script:ApplyingDupMode = $true
         try {
             Apply-DuplicatesToGrid
-        } finally {
+        }
+        finally {
             $script:ApplyingDupMode = $false
         }
     }
@@ -3801,167 +3884,172 @@ if ($null -eq $script:SearchWorker) {
 
     $script:SearchWorker.add_DoWork({
 
-        param($sender, $e)
+            param($sender, $e)
 
-        $a = $e.Argument
-
-
-
-        $prevRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-
-        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $script:MainRunspace
+            $a = $e.Argument
 
 
 
+            $prevRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+
+            [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $script:MainRunspace
 
 
-        Debug-Log ("Worker DoWork: entered (ThreadId={0})" -f [System.Threading.Thread]::CurrentThread.ManagedThreadId)
 
-        try {
 
-            Debug-Log "Worker: calling Search-Files"
 
-            $items = @(Search-Files -Dir $a.Dir -UseBody $a.UseBody -BodyFilter $a.BodyFilter -UseTag $a.UseTag -TagFilter $a.TagFilter -AllowedExts $a.Allowed -CancelCheck { $sender.CancellationPending })
+            Debug-Log ("Worker DoWork: entered (ThreadId={0})" -f [System.Threading.Thread]::CurrentThread.ManagedThreadId)
 
-            Debug-Log ("Worker: Search-Files returned {0} items" -f (Get-Count $items))
+            try {
 
-            if ($sender.CancellationPending) {
-                Debug-Log "Worker: cancellation pending -> cancelling"
-                $e.Cancel = $true
-                return
-            }
+                Debug-Log "Worker: calling Search-Files"
 
-            $e.Result = [PSCustomObject]@{
+                $items = @(Search-Files -Dir $a.Dir -UseBody $a.UseBody -BodyFilter $a.BodyFilter -UseTag $a.UseTag -TagFilter $a.TagFilter -AllowedExts $a.Allowed -CancelCheck { $sender.CancellationPending })
 
-                Ok           = $true
+                Debug-Log ("Worker: Search-Files returned {0} items" -f (Get-Count $items))
 
-                Items        = $items
+                if ($sender.CancellationPending) {
+                    Debug-Log "Worker: cancellation pending -> cancelling"
+                    $e.Cancel = $true
+                    return
+                }
 
-                Preferred    = $a.Preferred
+                $e.Result = [PSCustomObject]@{
 
-                Fallback     = $a.Fallback
+                    Ok        = $true
 
-                Allowed      = $a.Allowed
+                    Items     = $items
 
-                Dir          = $a.Dir
+                    Preferred = $a.Preferred
 
-            }
+                    Fallback  = $a.Fallback
 
-        } catch {
+                    Allowed   = $a.Allowed
 
-            $e.Result = [PSCustomObject]@{
+                    Dir       = $a.Dir
 
-                Ok      = $false
-
-                Error   = $_.Exception.Message
-
-                Preferred = $a.Preferred
-
-                Fallback  = $a.Fallback
-
-                Allowed   = $a.Allowed
-
-                Dir       = $a.Dir
+                }
 
             }
+            catch {
 
-        }
+                $e.Result = [PSCustomObject]@{
 
-        finally {
+                    Ok        = $false
 
-            [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $prevRunspace
+                    Error     = $_.Exception.Message
 
-        }
+                    Preferred = $a.Preferred
 
-    })
+                    Fallback  = $a.Fallback
+
+                    Allowed   = $a.Allowed
+
+                    Dir       = $a.Dir
+
+                }
+
+            }
+
+            finally {
+
+                [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $prevRunspace
+
+            }
+
+        })
 
 
 
     $script:SearchWorker.add_RunWorkerCompleted({
 
-        param($sender, $e)
+            param($sender, $e)
 
-        try { Progress-End } catch { }
-        try {
-            if ($txtDir -and [string]::IsNullOrWhiteSpace([string]$txtDir.Text) -and -not [string]::IsNullOrWhiteSpace($script:LastDirText)) {
-                $txtDir.Text = [string]$script:LastDirText
+            try { Progress-End } catch { }
+            try {
+                if ($txtDir -and [string]::IsNullOrWhiteSpace([string]$txtDir.Text) -and -not [string]::IsNullOrWhiteSpace($script:LastDirText)) {
+                    $txtDir.Text = [string]$script:LastDirText
+                }
             }
-        } catch { }
+            catch { }
 
 
 
 
-        try {
+            try {
 
-            # réactive l'UI
+                # réactive l'UI
 
-            try { $btnSearch.Enabled = $true } catch {}
+                try { $btnSearch.Enabled = $true } catch {}
 
-            try { $btnBrowse.Enabled = $true } catch {}
+                try { $btnBrowse.Enabled = $true } catch {}
 
-            try { $btnHelp.Enabled   = $true } catch {}
+                try { $btnHelp.Enabled = $true } catch {}
 
-            try { $comboTypes.Enabled = $true } catch {}
-
-        } catch {}
-
-        $script:IsSearching = $false
-
-        if ($e.Cancelled -or $script:LastSearchInterrupted) {
-
-            Set-Status "Search interrupted"
-            try { Set-Info "Interrupted" } catch { }
-            $script:LastSearchInterrupted = $false
-            $script:PendingSearchArgs = $null
-            $script:PendingSearchRequest = $false
-            return
-
-        } else {
-
-            $r = $e.Result
-
-            if ($null -ne $r -and $r.Ok) {
-
-                $script:CurrentItems = @($r.Items)
-
-                Fill-GridFromItems -items $script:CurrentItems -PreferredPaths $r.Preferred -FallbackIndex $r.Fallback
-
-                try { Refresh-TagsFound } catch {}
-
-                if ($script:DupModeEnabled -and -not $script:DupApplying) { Do-FindDuplicates }
-                Debug-Log ("UI: filling grid with {0} items" -f (Get-Count $script:CurrentItems))
-
-                Update-FoundCountStatus -UpdatingView:$UpdatingView
-
-            } elseif ($null -ne $r -and -not $r.Ok) {
-
-                [System.Windows.Forms.MessageBox]::Show($form, "Search error:`r`n$($r.Error)", "Search",
-
-                    [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                try { $comboTypes.Enabled = $true } catch {}
 
             }
+            catch {}
 
-        }
+            $script:IsSearching = $false
 
-        try { Set-Info "Ready" } catch { }
+            if ($e.Cancelled -or $script:LastSearchInterrupted) {
+
+                Set-Status "Search interrupted"
+                try { Set-Info "Interrupted" } catch { }
+                $script:LastSearchInterrupted = $false
+                $script:PendingSearchArgs = $null
+                $script:PendingSearchRequest = $false
+                return
+
+            }
+            else {
+
+                $r = $e.Result
+
+                if ($null -ne $r -and $r.Ok) {
+
+                    $script:CurrentItems = @($r.Items)
+
+                    Fill-GridFromItems -items $script:CurrentItems -PreferredPaths $r.Preferred -FallbackIndex $r.Fallback
+
+                    try { Refresh-TagsFound } catch {}
+
+                    if ($script:DupModeEnabled -and -not $script:DupApplying) { Do-FindDuplicates }
+                    Debug-Log ("UI: filling grid with {0} items" -f (Get-Count $script:CurrentItems))
+
+                    Update-FoundCountStatus -UpdatingView:$UpdatingView
+
+                }
+                elseif ($null -ne $r -and -not $r.Ok) {
+
+                    [System.Windows.Forms.MessageBox]::Show($form, "Search error:`r`n$($r.Error)", "Search",
+
+                        [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+
+                }
+
+            }
+
+            try { Set-Info "Ready" } catch { }
 
 
 
 
 
-        # si une recherche a été demandée pendant l'exécution, on la lance maintenant
+            # si une recherche a été demandée pendant l'exécution, on la lance maintenant
 
-        if ($null -ne $script:PendingSearchArgs) {
+            if ($null -ne $script:PendingSearchArgs) {
 
-            $next = $script:PendingSearchArgs
+                $next = $script:PendingSearchArgs
 
-            $script:PendingSearchArgs = $null
+                $script:PendingSearchArgs = $null
 
-            Start-SearchSync -PreferredPaths $next.Preferred -FallbackIndex $next.Fallback
+                Start-SearchSync -PreferredPaths $next.Preferred -FallbackIndex $next.Fallback
 
-        }
+            }
 
-    })
+        })
 
 }
 
@@ -3979,7 +4067,7 @@ function Request-InterruptSearch {
     $script:CancelSearchRequested = $true
 
     # Do not auto-run pending searches after an explicit interruption
-    $script:PendingSearchArgs    = $null
+    $script:PendingSearchArgs = $null
     $script:PendingSearchRequest = $false
 
     # Update UI immediately
@@ -4011,15 +4099,15 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
     }
 
     $searchArgs = [PSCustomObject]@{
-        Dir          = $dir
-        UseBody      = [bool]$chkBody.Checked
-        UseTag       = [bool]$chkTag.Checked
-        BodyFilter   = [string]$txtBody.Text
-        TagFilter    = [string]$txtTag.Text
-        Allowed      = Get-AllowedExtsFromChoice (Get-SelectedTypeLabel $comboTypes)
-        Preferred    = $PreferredPaths
-        Fallback     = $FallbackIndex
-        UpdatingView = [bool]$UpdatingView
+        Dir           = $dir
+        UseBody       = [bool]$chkBody.Checked
+        UseTag        = [bool]$chkTag.Checked
+        BodyFilter    = [string]$txtBody.Text
+        TagFilter     = [string]$txtTag.Text
+        Allowed       = Get-AllowedExtsFromChoice (Get-SelectedTypeLabel $comboTypes)
+        Preferred     = $PreferredPaths
+        Fallback      = $FallbackIndex
+        UpdatingView  = [bool]$UpdatingView
 
         # Advanced filters
         NoSubdirs     = [bool]($chkNoSubdirs.Checked)
@@ -4031,7 +4119,7 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
         BeforeDate    = [datetime]$dtBefore.Value
 
         UseEverything = [bool]($chkEverything.Checked)
-        ForceRefresh = [bool]$ForceRefresh
+        ForceRefresh  = [bool]$ForceRefresh
     }
 
 
@@ -4060,9 +4148,10 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
     try {
         try { $btnSearch.Enabled = $false } catch {}
         try { $btnBrowse.Enabled = $false } catch {}
-        try { $btnHelp.Enabled   = $false } catch {}
+        try { $btnHelp.Enabled = $false } catch {}
         try { $comboTypes.Enabled = $false } catch {}
-    } catch {}
+    }
+    catch {}
 
     # Activity indicator (blinking)
     Set-Info "Searching (press ESC to cancel)..."
@@ -4074,7 +4163,8 @@ function Start-SearchAsync([string[]]$PreferredPaths, [int]$FallbackIndex) {
     # Launch background worker (no UI freeze => blinking works)
     try {
         $script:SearchWorker.RunWorkerAsync($searchArgs)
-    } catch {
+    }
+    catch {
         Debug-Log ("Start-SearchAsync: ERROR {0}" -f $_.Exception.Message)
         $script:IsSearching = $false
         Set-Info "Ready"
@@ -4110,15 +4200,15 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
     }
 
     $searchArgs = [PSCustomObject]@{
-        Dir          = $dir
-        UseBody      = [bool]$chkBody.Checked
-        UseTag       = [bool]$chkTag.Checked
-        BodyFilter   = [string]$txtBody.Text
-        TagFilter    = [string]$txtTag.Text
-        Allowed      = Get-AllowedExtsFromChoice (Get-SelectedTypeLabel $comboTypes)
-        Preferred    = $PreferredPaths
-        Fallback     = $FallbackIndex
-        UpdatingView = [bool]$UpdatingView
+        Dir           = $dir
+        UseBody       = [bool]$chkBody.Checked
+        UseTag        = [bool]$chkTag.Checked
+        BodyFilter    = [string]$txtBody.Text
+        TagFilter     = [string]$txtTag.Text
+        Allowed       = Get-AllowedExtsFromChoice (Get-SelectedTypeLabel $comboTypes)
+        Preferred     = $PreferredPaths
+        Fallback      = $FallbackIndex
+        UpdatingView  = [bool]$UpdatingView
 
         # Advanced filters
         NoSubdirs     = [bool]($chkNoSubdirs.Checked)
@@ -4136,7 +4226,7 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
     # Record into search history (only when user actually launches a search)
     try { Add-SearchHistoryFromArgs $searchArgs } catch { }
 
-# Defer during initialization / restore
+    # Defer during initialization / restore
     if ($script:IsRestoring -or $script:IsInitializing) {
         Debug-Log "Start-SearchSync: init/restore in progress -> pending"
         $script:PendingSearchRequest = $true
@@ -4159,20 +4249,22 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
     $script:IsSearching = $true
     $script:LastSearchInterrupted = $false
     $script:CancelSearchRequested = $false
-    $script:PendingSearchRequest  = $false
-    $script:PendingSearchArgs     = $null
+    $script:PendingSearchRequest = $false
+    $script:PendingSearchArgs = $null
 
     # Disable UI while searching
     try {
         try { $btnSearch.Enabled = $false } catch {}
         try { $btnBrowse.Enabled = $false } catch {}
-        try { $btnHelp.Enabled   = $false } catch {}
+        try { $btnHelp.Enabled = $false } catch {}
         try { $comboTypes.Enabled = $false } catch {}
-    } catch {}
+    }
+    catch {}
     # Activity indicator (no blinking in synchronous mode)
     if ($UpdatingView) {
         Set-Info "Updating view"
-    } else {
+    }
+    else {
         Set-Info "Searching (press ESC to cancel)..."
     }
     try { [System.Windows.Forms.Application]::DoEvents() } catch { }
@@ -4189,7 +4281,8 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
         # Discrete Everything indicator (UI only for now)
         if ($searchArgs.UseEverything) {
             Set-EverythingInfo (Get-EverythingStatusText)
-        } else {
+        }
+        else {
             Set-EverythingInfo "Everything: off"
         }
 
@@ -4206,8 +4299,8 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
             try { $before = $searchArgs.BeforeDate.Date.AddDays(1).AddTicks(-1) } catch { $before = $null }
         }
 
-                    $items = Search-Files -Dir $searchArgs.Dir -UseBody $searchArgs.UseBody -BodyFilter $searchArgs.BodyFilter -UseTag $searchArgs.UseTag -TagFilter $searchArgs.TagFilter -AllowedExts $searchArgs.Allowed -NoSubdirs $searchArgs.NoSubdirs -MinSizeBytes $minBytes -MaxSizeBytes $maxBytes -ModifiedAfter $after -ModifiedBefore $before -CancelCheck $cancel -ForceRefresh:$ForceRefresh
-if ($script:CancelSearchRequested -or $script:LastSearchInterrupted) {
+        $items = Search-Files -Dir $searchArgs.Dir -UseBody $searchArgs.UseBody -BodyFilter $searchArgs.BodyFilter -UseTag $searchArgs.UseTag -TagFilter $searchArgs.TagFilter -AllowedExts $searchArgs.Allowed -NoSubdirs $searchArgs.NoSubdirs -MinSizeBytes $minBytes -MaxSizeBytes $maxBytes -ModifiedAfter $after -ModifiedBefore $before -CancelCheck $cancel -ForceRefresh:$ForceRefresh
+        if ($script:CancelSearchRequested -or $script:LastSearchInterrupted) {
             Set-Status "Search interrupted"
             Set-Info "Interrupted"
             $script:CancelSearchRequested = $false
@@ -4230,14 +4323,16 @@ if ($script:CancelSearchRequested -or $script:LastSearchInterrupted) {
         Update-FoundCountStatus -UpdatingView:$UpdatingView
         Set-Info "Ready"
 
-    } catch {
+    }
+    catch {
 
         Debug-Log ("Start-SearchSync: ERROR {0}" -f $_.Exception.Message)
         Set-Info "Ready"
         Set-Status "Search error"
         throw
 
-    } finally {
+    }
+    finally {
 
         $script:IsSearching = $false
 
@@ -4245,9 +4340,10 @@ if ($script:CancelSearchRequested -or $script:LastSearchInterrupted) {
         try {
             try { $btnSearch.Enabled = $true } catch {}
             try { $btnBrowse.Enabled = $true } catch {}
-            try { $btnHelp.Enabled   = $true } catch {}
+            try { $btnHelp.Enabled = $true } catch {}
             try { $comboTypes.Enabled = $true } catch {}
-        } catch {}
+        }
+        catch {}
 
         # If a search request arrived during search, run it now (unless user explicitly interrupted)
         if ($script:PendingSearchRequest -and $script:PendingSearchArgs) {
@@ -4284,20 +4380,20 @@ function Add-SearchHistoryFromArgs([object]$args) {
         # if ([bool]$args.UpdatingView) { return }
 
         $entry = [PSCustomObject]@{
-            When        = (Get-Date).ToString("s")
-            Dir         = [string]$args.Dir
-            BodyEnabled = [bool]$args.UseBody
-            TagEnabled  = [bool]$args.UseTag
-            BodyText    = [string]$args.BodyFilter
-            TagText     = [string]$args.TagFilter
-            TypeText    = [string](Get-SelectedTypeLabel $comboTypes)
-            NoSubdirs   = [bool]$args.NoSubdirs
-            MinSizeText = [string]$args.MinSizeText
-            MaxSizeText = [string]$args.MaxSizeText
-            AfterOn     = [bool]$args.AfterOn
-            AfterDate   = if ($args.AfterDate) { [datetime]$args.AfterDate } else { $null }
-            BeforeOn    = [bool]$args.BeforeOn
-            BeforeDate  = if ($args.BeforeDate) { [datetime]$args.BeforeDate } else { $null }
+            When          = (Get-Date).ToString("s")
+            Dir           = [string]$args.Dir
+            BodyEnabled   = [bool]$args.UseBody
+            TagEnabled    = [bool]$args.UseTag
+            BodyText      = [string]$args.BodyFilter
+            TagText       = [string]$args.TagFilter
+            TypeText      = [string](Get-SelectedTypeLabel $comboTypes)
+            NoSubdirs     = [bool]$args.NoSubdirs
+            MinSizeText   = [string]$args.MinSizeText
+            MaxSizeText   = [string]$args.MaxSizeText
+            AfterOn       = [bool]$args.AfterOn
+            AfterDate     = if ($args.AfterDate) { [datetime]$args.AfterDate } else { $null }
+            BeforeOn      = [bool]$args.BeforeOn
+            BeforeDate    = if ($args.BeforeDate) { [datetime]$args.BeforeDate } else { $null }
             UseEverything = [bool]$args.UseEverything
         }
 
@@ -4309,18 +4405,18 @@ function Add-SearchHistoryFromArgs([object]$args) {
         if ($script:SearchHistory.Count -gt 0) {
             $top = $script:SearchHistory[0]
             $same =
-                ([string]$top.Dir -eq [string]$entry.Dir) -and
-                ([bool]$top.BodyEnabled -eq [bool]$entry.BodyEnabled) -and
-                ([bool]$top.TagEnabled -eq [bool]$entry.TagEnabled) -and
-                ([string]$top.BodyText -eq [string]$entry.BodyText) -and
-                ([string]$top.TagText -eq [string]$entry.TagText) -and
-                ([string]$top.TypeText -eq [string]$entry.TypeText) -and
-                ([bool]$top.NoSubdirs -eq [bool]$entry.NoSubdirs) -and
-                ([string]$top.MinSizeText -eq [string]$entry.MinSizeText) -and
-                ([string]$top.MaxSizeText -eq [string]$entry.MaxSizeText) -and
-                ([bool]$top.AfterOn -eq [bool]$entry.AfterOn) -and
-                ([bool]$top.BeforeOn -eq [bool]$entry.BeforeOn) -and
-                ([bool]$top.UseEverything -eq [bool]$entry.UseEverything)
+            ([string]$top.Dir -eq [string]$entry.Dir) -and
+            ([bool]$top.BodyEnabled -eq [bool]$entry.BodyEnabled) -and
+            ([bool]$top.TagEnabled -eq [bool]$entry.TagEnabled) -and
+            ([string]$top.BodyText -eq [string]$entry.BodyText) -and
+            ([string]$top.TagText -eq [string]$entry.TagText) -and
+            ([string]$top.TypeText -eq [string]$entry.TypeText) -and
+            ([bool]$top.NoSubdirs -eq [bool]$entry.NoSubdirs) -and
+            ([string]$top.MinSizeText -eq [string]$entry.MinSizeText) -and
+            ([string]$top.MaxSizeText -eq [string]$entry.MaxSizeText) -and
+            ([bool]$top.AfterOn -eq [bool]$entry.AfterOn) -and
+            ([bool]$top.BeforeOn -eq [bool]$entry.BeforeOn) -and
+            ([bool]$top.UseEverything -eq [bool]$entry.UseEverything)
 
             if ($same) {
                 try { $top.When = $entry.When } catch {}
@@ -4335,7 +4431,8 @@ function Add-SearchHistoryFromArgs([object]$args) {
         while ($script:SearchHistory.Count -gt [int]$script:SearchHistoryMax) {
             [void]$script:SearchHistory.RemoveAt($script:SearchHistory.Count - 1)
         }
-    } catch { }
+    }
+    catch { }
 }
 
 function Apply-SearchHistoryEntry([object]$h) {
@@ -4344,9 +4441,9 @@ function Apply-SearchHistoryEntry([object]$h) {
     try {
         if ($txtDir) { $txtDir.Text = [string]$h.Dir }
         if ($chkBody) { $chkBody.Checked = [bool]$h.BodyEnabled }
-        if ($chkTag)  { $chkTag.Checked  = [bool]$h.TagEnabled }
+        if ($chkTag) { $chkTag.Checked = [bool]$h.TagEnabled }
         if ($txtBody) { $txtBody.Text = [string]$h.BodyText }
-        if ($txtTag)  { $txtTag.Text  = [string]$h.TagText }
+        if ($txtTag) { $txtTag.Text = [string]$h.TagText }
         if ($comboTypes -and $h.TypeText) {
             try { $comboTypes.SelectedItem = [string]$h.TypeText } catch { }
         }
@@ -4363,7 +4460,8 @@ function Apply-SearchHistoryEntry([object]$h) {
             if ($h.BeforeDate) { try { $dtBefore.Value = [datetime]$h.BeforeDate } catch {} }
         }
         if ($chkEverything) { $chkEverything.Checked = [bool]$h.UseEverything }
-    } finally {
+    }
+    finally {
         $script:IsRestoring = $false
     }
 }
@@ -4388,12 +4486,12 @@ function Show-SearchHistoryDialog {
 
         foreach ($h in $script:SearchHistory) {
             $type = if ($h.TypeText) { [string]$h.TypeText } else { "" }
-            $dir  = [string]$h.Dir
+            $dir = [string]$h.Dir
             $flags = @()
             if ([bool]$h.NoSubdirs) { $flags += "no subdirs" }
             if ([bool]$h.UseEverything) { $flags += "Everything" }
             if ([bool]$h.BodyEnabled) { $flags += "body" }
-            if ([bool]$h.TagEnabled)  { $flags += "tags" }
+            if ([bool]$h.TagEnabled) { $flags += "tags" }
             $f = if ($flags.Count -gt 0) { " [" + ($flags -join ", ") + "]" } else { "" }
 
             $lb.Items.Add(("{0} | {1} | {2}{3}" -f [string]$h.When, $type, $dir, $f)) | Out-Null
@@ -4434,26 +4532,27 @@ function Show-SearchHistoryDialog {
         }
 
         $btnApply.Add_Click({
-            if (& $doApply) { }
-        })
+                if (& $doApply) { }
+            })
         $btnRun.Add_Click({
-            if (& $doApply) {
-                $dlg.Close()
-                Trigger-Search
-            }
-        })
+                if (& $doApply) {
+                    $dlg.Close()
+                    Trigger-Search
+                }
+            })
         $btnClose.Add_Click({ $dlg.Close() })
 
         $lb.Add_DoubleClick({
-            if (& $doApply) {
-                $dlg.Close()
-                Trigger-Search
-            }
-        })
+                if (& $doApply) {
+                    $dlg.Close()
+                    Trigger-Search
+                }
+            })
 
         $dlg.ShowDialog($form) | Out-Null
 
-    } catch { }
+    }
+    catch { }
 }
 
 
@@ -4475,7 +4574,8 @@ function Trigger-Search([switch]$ForceRefresh) {
 
     try {
         Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex) -ForceRefresh:$ForceRefresh
-    } catch {
+    }
+    catch {
         Debug-Log ("Trigger-Search: ERROR {0}" -f $_.Exception.Message)
     }
 }
@@ -4486,59 +4586,61 @@ function Trigger-Search([switch]$ForceRefresh) {
 
 $grid.Add_ColumnHeaderMouseClick({
 
-    param($sender, $e)
+        param($sender, $e)
 
-    if ($script:CurrentItems -eq $null -or (Get-Count $script:CurrentItems) -le 1) { return }
-
-
-
-    $col = $grid.Columns[$e.ColumnIndex]
-
-    if ($null -eq $col) { return }
-
-    $prop = $col.Name
-
-    if ([string]::IsNullOrWhiteSpace($prop)) { return }
+        if ($script:CurrentItems -eq $null -or (Get-Count $script:CurrentItems) -le 1) { return }
 
 
 
-    $selPaths = @(Get-SelectedPaths)
+        $col = $grid.Columns[$e.ColumnIndex]
 
-    $fallback = Get-FirstSelectedIndex
+        if ($null -eq $col) { return }
 
+        $prop = $col.Name
 
-
-    if ($script:SortColumnName -eq $prop) {
-
-        $script:SortAscending = -not $script:SortAscending
-
-    } else {
-
-        $script:SortColumnName = $prop
-
-        $script:SortAscending  = $true
-
-    }
+        if ([string]::IsNullOrWhiteSpace($prop)) { return }
 
 
 
-    if ($script:SortAscending) {
+        $selPaths = @(Get-SelectedPaths)
 
-        $sorted = $script:CurrentItems | Sort-Object -Property $prop
-
-    } else {
-
-        $sorted = $script:CurrentItems | Sort-Object -Property $prop -Descending
-
-    }
-
-    $script:CurrentItems = @($sorted)
+        $fallback = Get-FirstSelectedIndex
 
 
 
-    Fill-GridFromItems -items $script:CurrentItems -PreferredPaths $selPaths -FallbackIndex $fallback -NoFitColumns
+        if ($script:SortColumnName -eq $prop) {
 
-})
+            $script:SortAscending = -not $script:SortAscending
+
+        }
+        else {
+
+            $script:SortColumnName = $prop
+
+            $script:SortAscending = $true
+
+        }
+
+
+
+        if ($script:SortAscending) {
+
+            $sorted = $script:CurrentItems | Sort-Object -Property $prop
+
+        }
+        else {
+
+            $sorted = $script:CurrentItems | Sort-Object -Property $prop -Descending
+
+        }
+
+        $script:CurrentItems = @($sorted)
+
+
+
+        Fill-GridFromItems -items $script:CurrentItems -PreferredPaths $selPaths -FallbackIndex $fallback -NoFitColumns
+
+    })
 
 
 
@@ -4588,9 +4690,10 @@ function Apply-GridColumns($cols) {
 
             $c.Visible = [bool]$cc.Visible
 
-            $c.Width   = [int]$cc.Width
+            $c.Width = [int]$cc.Width
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -4604,7 +4707,8 @@ function Apply-GridColumns($cols) {
 
             if ($null -ne $c) { $c.DisplayIndex = [int]$cc.DisplayIndex }
 
-        } catch {}
+        }
+        catch {}
 
     }
 
@@ -4660,7 +4764,7 @@ function Capture-Settings {
 
         }
 
-        Grid = [PSCustomObject]@{
+        Grid   = [PSCustomObject]@{
 
             Columns          = Capture-GridColumns
 
@@ -4700,19 +4804,21 @@ function Capture-SettingsSnapshot {
     try {
         $cfg.Window.X = [int]$form.Left
         $cfg.Window.Y = [int]$form.Top
-        $cfg.Window.Width  = [int]$form.Width
+        $cfg.Window.Width = [int]$form.Width
         $cfg.Window.Height = [int]$form.Height
-    } catch {}
+    }
+    catch {}
 
     # Search
     try {
-        $cfg.Search.Directory     = [string]$txtDir.Text
-        $cfg.Search.BodyEnabled   = [bool]$chkBody.Checked
-        $cfg.Search.TagEnabled    = [bool]$chkTag.Checked
+        $cfg.Search.Directory = [string]$txtDir.Text
+        $cfg.Search.BodyEnabled = [bool]$chkBody.Checked
+        $cfg.Search.TagEnabled = [bool]$chkTag.Checked
         $cfg.Search.FileTypeLabel = [string]$cmbFileType.Text
-        $cfg.Search.TagExpr       = [string]$txtTag.Text
-        $cfg.Search.BodyExpr      = [string]$txtBody.Text
-    } catch {}
+        $cfg.Search.TagExpr = [string]$txtTag.Text
+        $cfg.Search.BodyExpr = [string]$txtBody.Text
+    }
+    catch {}
 
     # Grid
     try { $cfg.Grid.Columns = Capture-GridColumns } catch {}
@@ -4721,7 +4827,7 @@ function Capture-SettingsSnapshot {
 }
 
 
-function Show-InputBox([string]$title, [string]$prompt, [string]$default="") {
+function Show-InputBox([string]$title, [string]$prompt, [string]$default = "") {
 
     return [Microsoft.VisualBasic.Interaction]::InputBox($prompt, $title, $default)
 
@@ -4767,7 +4873,8 @@ function Refresh-TagsFound {
 
                         }
 
-                    } catch {}
+                    }
+                    catch {}
 
                 }
 
@@ -4781,7 +4888,8 @@ function Refresh-TagsFound {
 
             $comboFoundTags.SelectedIndex = -1
 
-        } finally {
+        }
+        finally {
 
             $comboFoundTags.EndUpdate()
 
@@ -4789,7 +4897,8 @@ function Refresh-TagsFound {
 
         }
 
-    } catch {
+    }
+    catch {
 
         $script:SuppressFoundTagsEvent = $false
 
@@ -4871,7 +4980,8 @@ function Do-AddTag {
 
                 [void]$newPreferred.Add($newPath)
 
-            } else {
+            }
+            else {
 
                 $skipped++
 
@@ -4879,7 +4989,8 @@ function Do-AddTag {
 
             }
 
-        } catch {
+        }
+        catch {
 
             $failed++
 
@@ -4891,7 +5002,7 @@ function Do-AddTag {
 
 
 
-    Set-OpStatus ("Add tags: changed {0}, skipped {1}, failed {2}" -f $changed,$skipped,$failed)
+    Set-OpStatus ("Add tags: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
 
 
@@ -4951,7 +5062,7 @@ function Do-RemoveTag {
 
 
 
-    $changed=0; $skipped=0; $failed=0
+    $changed = 0; $skipped = 0; $failed = 0
 
     $newPreferred = New-Object System.Collections.Generic.List[string]
 
@@ -5005,7 +5116,8 @@ function Do-RemoveTag {
 
                 [void]$newPreferred.Add($newPath)
 
-            } else {
+            }
+            else {
 
                 $skipped++
 
@@ -5013,7 +5125,8 @@ function Do-RemoveTag {
 
             }
 
-        } catch {
+        }
+        catch {
 
             $failed++
 
@@ -5025,7 +5138,7 @@ function Do-RemoveTag {
 
 
 
-    Set-OpStatus ("Remove tags: changed {0}, skipped {1}, failed {2}" -f $changed,$skipped,$failed)
+    Set-OpStatus ("Remove tags: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
 
 
@@ -5079,7 +5192,7 @@ function Do-BodyRename {
 
     $changed = 0
     $skipped = 0
-    $failed  = 0
+    $failed = 0
     $preferred = New-Object System.Collections.Generic.List[string]
 
     try {
@@ -5093,12 +5206,13 @@ function Do-BodyRename {
         if ($res -eq "changed") {
             $changed++
             [void]$preferred.Add($newPath)
-        } else {
+        }
+        else {
             $skipped++
             [void]$preferred.Add($p)
         }
 
-        Set-OpStatus ("Body rename: changed {0}, skipped {1}, failed {2}" -f $changed,$skipped,$failed)
+        Set-OpStatus ("Body rename: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
 
 
@@ -5106,11 +5220,12 @@ function Do-BodyRename {
 
         Run-UpdateViewAndFillGrid -PreferredPaths @($preferred) -FallbackIndex (Get-FirstSelectedIndex)
 
-    } catch {
+    }
+    catch {
 
         $failed++
         try { [void]$preferred.Add($p) } catch { }
-        Set-OpStatus ("Body rename: changed {0}, skipped {1}, failed {2}" -f $changed,$skipped,$failed)
+        Set-OpStatus ("Body rename: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
         [System.Windows.Forms.MessageBox]::Show($form, "Rename failed:`r`n$($_.Exception.Message)", "Body rename",
 
@@ -5149,7 +5264,8 @@ function Execute-Paths([string[]]$paths) {
 
             Start-Process -FilePath $p | Out-Null
 
-        } catch {
+        }
+        catch {
 
             [System.Windows.Forms.MessageBox]::Show($form, "Cannot open:`r`n$p`r`n`r`n$($_.Exception.Message)", "Execute",
 
@@ -5217,7 +5333,8 @@ function Do-OpenFolder {
 
         Start-Process explorer.exe $arg | Out-Null
 
-    } catch {
+    }
+    catch {
 
         [System.Windows.Forms.MessageBox]::Show($form, "Cannot open folder:`r`n$($_.Exception.Message)", "Open folder",
 
@@ -5251,15 +5368,17 @@ function Get-ImageDescription([string]$Path) {
 
             $bpp = [System.Drawing.Image]::GetPixelFormatSize($img.PixelFormat)
 
-            return ("{0}x{1}, {2}x{3} ppp @ {4} bits" -f $w,$h,$dpiX,$dpiY,$bpp)
+            return ("{0}x{1}, {2}x{3} ppp @ {4} bits" -f $w, $h, $dpiX, $dpiY, $bpp)
 
-        } finally {
+        }
+        finally {
 
             $img.Dispose()
 
         }
 
-    } catch {
+    }
+    catch {
 
         return $null
 
@@ -5291,7 +5410,7 @@ function Get-ShellDetailsMap([string]$Path) {
 
 
 
-        for ($i=0; $i -lt 320; $i++) {
+        for ($i = 0; $i -lt 320; $i++) {
 
             $name = [string]$folder.GetDetailsOf($null, $i)
 
@@ -5305,7 +5424,8 @@ function Get-ShellDetailsMap([string]$Path) {
 
         }
 
-    } catch {}
+    }
+    catch {}
 
     return $map
 
@@ -5327,17 +5447,19 @@ function Find-MediaInfoExe {
             $exe = Join-Path $p 'MediaInfo.exe'
             if (Test-Path -LiteralPath $exe) { [void]$candidates.Add($exe) }
         }
-    } catch { }
+    }
+    catch { }
 
     try {
         foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
             if (-not $root) { continue }
-            foreach ($sub in @('MediaInfo','MediaArea\MediaInfo')) {
+            foreach ($sub in @('MediaInfo', 'MediaArea\MediaInfo')) {
                 $exe = Join-Path (Join-Path $root $sub) 'MediaInfo.exe'
                 if (Test-Path -LiteralPath $exe) { [void]$candidates.Add($exe) }
             }
         }
-    } catch { }
+    }
+    catch { }
 
     # WinGet user packages (common on non-admin installs):
     try {
@@ -5351,7 +5473,8 @@ function Find-MediaInfoExe {
                 }
             }
         }
-    } catch { }
+    }
+    catch { }
 
     foreach ($c in ($candidates | Select-Object -Unique)) {
         if (Test-Path -LiteralPath $c) { return $c }
@@ -5364,7 +5487,8 @@ function Get-MediaInfoCliPath {
     try {
         $p = Find-MediaInfoExe
         if ($p) { return $p }
-    } catch { }
+    }
+    catch { }
     return $null
 }
 function Get-SettingsDir {
@@ -5373,9 +5497,11 @@ function Get-SettingsDir {
 
     if ($env:LOCALAPPDATA) {
         $base = Join-Path $env:LOCALAPPDATA $script:AppName
-    } elseif ($env:APPDATA) {
+    }
+    elseif ($env:APPDATA) {
         $base = Join-Path $env:APPDATA $script:AppName
-    } else {
+    }
+    else {
         # Fallback: alongside the script (should be rare)
         $base = Join-Path $PSScriptRoot $script:AppName
     }
@@ -5384,7 +5510,8 @@ function Get-SettingsDir {
         if (-not (Test-Path -LiteralPath $base)) {
             [void](New-Item -ItemType Directory -Path $base -Force -ErrorAction SilentlyContinue)
         }
-    } catch { }
+    }
+    catch { }
 
     return $base
 }
@@ -5399,7 +5526,8 @@ function _Dbg([string]$msg) {
             $ts = (Get-Date).ToString("HH:mm:ss.fff")
             Write-Host ("[DEBUG {0}] {1}" -f $ts, $msg)
         }
-    } catch {}
+    }
+    catch {}
 }
 
 function Get-ObjProp {
@@ -5423,7 +5551,8 @@ function Read-SettingsFile {
         if (-not ($cfg.PSObject.Properties.Name -contains "Search")) { throw "missing Search" }
         if (-not ($cfg.PSObject.Properties.Name -contains "Grid")) { throw "missing Grid" }
         return $cfg
-    } catch {
+    }
+    catch {
         _Dbg ("Read-SettingsFile: ERROR {0} => deleting '{1}'" -f $_.Exception.Message, $path)
         try { Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue } catch {}
         return $null
@@ -5446,25 +5575,26 @@ function Apply-Settings([object]$cfg) {
                     $b = $win.Bounds
                     if ($null -ne $b.X -and $null -ne $b.Y -and $null -ne $b.W -and $null -ne $b.H) {
                         $form.StartPosition = "Manual"
-                        $rect = New-Object System.Drawing.Rectangle([int]$b.X,[int]$b.Y,[int]$b.W,[int]$b.H)
+                        $rect = New-Object System.Drawing.Rectangle([int]$b.X, [int]$b.Y, [int]$b.W, [int]$b.H)
                         try {
                             $wa = [System.Windows.Forms.Screen]::FromRectangle($rect).WorkingArea
                             $minW = 760; $minH = 520
-                            try { if ($form.MinimumSize.Width  -gt 0) { $minW = [int]$form.MinimumSize.Width  } } catch { }
+                            try { if ($form.MinimumSize.Width -gt 0) { $minW = [int]$form.MinimumSize.Width } } catch { }
                             try { if ($form.MinimumSize.Height -gt 0) { $minH = [int]$form.MinimumSize.Height } } catch { }
-                            $w = [Math]::Max($minW, [Math]::Min($rect.Width,  $wa.Width))
+                            $w = [Math]::Max($minW, [Math]::Min($rect.Width, $wa.Width))
                             $h = [Math]::Max($minH, [Math]::Min($rect.Height, $wa.Height))
                             $x = $rect.X; $y = $rect.Y
                             if (($rect.Right -lt ($wa.Left + 50)) -or ($rect.Left -gt ($wa.Right - 50)) -or ($rect.Bottom -lt ($wa.Top + 50)) -or ($rect.Top -gt ($wa.Bottom - 50))) {
-                                $x = $wa.Left + [int](($wa.Width  - $w) / 2)
-                                $y = $wa.Top  + [int](($wa.Height - $h) / 2)
+                                $x = $wa.Left + [int](($wa.Width - $w) / 2)
+                                $y = $wa.Top + [int](($wa.Height - $h) / 2)
                             }
                             if ($x -lt $wa.Left) { $x = $wa.Left }
-                            if ($y -lt $wa.Top)  { $y = $wa.Top }
-                            if ($x + $w -gt $wa.Right)  { $x = $wa.Right - $w }
+                            if ($y -lt $wa.Top) { $y = $wa.Top }
+                            if ($x + $w -gt $wa.Right) { $x = $wa.Right - $w }
                             if ($y + $h -gt $wa.Bottom) { $y = $wa.Bottom - $h }
-                            $rect = New-Object System.Drawing.Rectangle([int]$x,[int]$y,[int]$w,[int]$h)
-                        } catch { }
+                            $rect = New-Object System.Drawing.Rectangle([int]$x, [int]$y, [int]$w, [int]$h)
+                        }
+                        catch { }
                         $form.Bounds = $rect
                     }
                 }
@@ -5472,7 +5602,8 @@ function Apply-Settings([object]$cfg) {
                     try { $form.WindowState = [System.Windows.Forms.FormWindowState]::$($win.State) } catch {}
                 }
             }
-        } catch { _Dbg ("Restore-Settings: window restore error: {0}" -f $_.Exception.Message) }
+        }
+        catch { _Dbg ("Restore-Settings: window restore error: {0}" -f $_.Exception.Message) }
 
         # ---- Search controls
         try {
@@ -5486,13 +5617,14 @@ function Apply-Settings([object]$cfg) {
                             $dd = Normalize-FSPath ([string]$d)
                             if (-not [string]::IsNullOrWhiteSpace($dd)) { [void]$txtDir.Items.Add($dd) }
                         }
-                    } catch { }
+                    }
+                    catch { }
                 }
 
                 if ($chkBody -and ($s.PSObject.Properties.Name -contains "BodyEnabled")) { $chkBody.Checked = [bool]$s.BodyEnabled }
-                if ($chkTag  -and ($s.PSObject.Properties.Name -contains "TagEnabled"))  { $chkTag.Checked  = [bool]$s.TagEnabled }
+                if ($chkTag -and ($s.PSObject.Properties.Name -contains "TagEnabled")) { $chkTag.Checked = [bool]$s.TagEnabled }
                 if ($txtBody -and ($s.PSObject.Properties.Name -contains "BodyText")) { $txtBody.Text = [string]$s.BodyText }
-                if ($txtTag  -and ($s.PSObject.Properties.Name -contains "TagText"))  { $txtTag.Text  = [string]$s.TagText }
+                if ($txtTag -and ($s.PSObject.Properties.Name -contains "TagText")) { $txtTag.Text = [string]$s.TagText }
 
                 if ($chkNoSubdirs -and ($s.PSObject.Properties.Name -contains "NoSubdirs")) { $chkNoSubdirs.Checked = [bool]$s.NoSubdirs }
                 if ($txtMinSize -and ($s.PSObject.Properties.Name -contains "MinSizeText")) { $txtMinSize.Text = [string]$s.MinSizeText }
@@ -5502,27 +5634,30 @@ function Apply-Settings([object]$cfg) {
                 if ($dtBefore -and ($s.PSObject.Properties.Name -contains "BeforeOn")) { $dtBefore.Checked = [bool]$s.BeforeOn }
                 if ($dtBefore -and ($s.PSObject.Properties.Name -contains "BeforeDate")) { $dtBefore.Value = [datetime]$s.BeforeDate }
                 if ($chkEverything -and ($s.PSObject.Properties.Name -contains "UseEverything")) {
-        # Search history
-        try {
-            if ($s.PSObject.Properties.Name -contains "History") {
-                if ($null -eq $script:SearchHistory) { $script:SearchHistory = New-Object System.Collections.ArrayList } else { $script:SearchHistory.Clear() }
-                foreach ($h in @($s.History)) { [void]$script:SearchHistory.Add($h) }
-            }
-        } catch { }
+                    # Search history
+                    try {
+                        if ($s.PSObject.Properties.Name -contains "History") {
+                            if ($null -eq $script:SearchHistory) { $script:SearchHistory = New-Object System.Collections.ArrayList } else { $script:SearchHistory.Clear() }
+                            foreach ($h in @($s.History)) { [void]$script:SearchHistory.Add($h) }
+                        }
+                    }
+                    catch { }
 
-$chkEverything.Checked = [bool]$s.UseEverything }
+                    $chkEverything.Checked = [bool]$s.UseEverything
+                }
                 if ($comboTypes -and ($s.PSObject.Properties.Name -contains "TypeText")) {
                     $t = [string]$s.TypeText
                     if (-not [string]::IsNullOrWhiteSpace($t)) {
                         $idx = -1
-                        for ($i=0; $i -lt $comboTypes.Items.Count; $i++) {
+                        for ($i = 0; $i -lt $comboTypes.Items.Count; $i++) {
                             if (($comboTypes.Items[$i] -as [string]) -eq $t) { $idx = $i; break }
                         }
                         if ($idx -ge 0) { $comboTypes.SelectedIndex = $idx }
                     }
                 }
             }
-        } catch { _Dbg ("Restore-Settings: search restore error: {0}" -f $_.Exception.Message) }
+        }
+        catch { _Dbg ("Restore-Settings: search restore error: {0}" -f $_.Exception.Message) }
 
         # ---- Grid columns
         try {
@@ -5543,25 +5678,29 @@ $chkEverything.Checked = [bool]$s.UseEverything }
                 }
             }
 
-# Restore duplicates mode + selection (applied lazily after grid bind)
-try {
-    if ($cfg.PSObject.Properties.Match("Duplicates").Count -gt 0 -and $cfg.Duplicates) {
-        try { $script:DupModeEnabled = [bool]$cfg.Duplicates.Enabled } catch { }
-        try { $script:DupHideNonDuplicates = [bool]$cfg.Duplicates.HideNonDuplicates } catch { }
-        try { $script:DupGroupByPath = [bool]$cfg.Duplicates.GroupByPath } catch { }
-        try { Update-DuplicatesUI } catch { }
-    }
-} catch { }
+            # Restore duplicates mode + selection (applied lazily after grid bind)
+            try {
+                if ($cfg.PSObject.Properties.Match("Duplicates").Count -gt 0 -and $cfg.Duplicates) {
+                    try { $script:DupModeEnabled = [bool]$cfg.Duplicates.Enabled } catch { }
+                    try { $script:DupHideNonDuplicates = [bool]$cfg.Duplicates.HideNonDuplicates } catch { }
+                    try { $script:DupGroupByPath = [bool]$cfg.Duplicates.GroupByPath } catch { }
+                    try { Update-DuplicatesUI } catch { }
+                }
+            }
+            catch { }
 
-try {
-    if ($cfg.PSObject.Properties.Match("Selection").Count -gt 0 -and $cfg.Selection) {
-        try { $script:PendingSelectionPaths = @($cfg.Selection.Paths) } catch { }
-        try { $script:PendingSelectionCurrentPath = $cfg.Selection.CurrentPath } catch { }
-    }
-} catch { }
+            try {
+                if ($cfg.PSObject.Properties.Match("Selection").Count -gt 0 -and $cfg.Selection) {
+                    try { $script:PendingSelectionPaths = @($cfg.Selection.Paths) } catch { }
+                    try { $script:PendingSelectionCurrentPath = $cfg.Selection.CurrentPath } catch { }
+                }
+            }
+            catch { }
 
-} catch { _Dbg ("Restore-Settings: grid restore error: {0}" -f $_.Exception.Message) }
-    } finally {
+        }
+        catch { _Dbg ("Restore-Settings: grid restore error: {0}" -f $_.Exception.Message) }
+    }
+    finally {
         $script:RestoringSettings = $false
     }
 }
@@ -5569,36 +5708,37 @@ try {
 function Collect-Settings {
     $cfg = [ordered]@{
         SchemaVersion = 1
-        SavedAt = (Get-Date).ToString("s")
-        Window = [ordered]@{
+        SavedAt       = (Get-Date).ToString("s")
+        Window        = [ordered]@{
             State  = if ($form) { $form.WindowState.ToString() } else { "Normal" }
             Bounds = if ($form) {
                 $b = if ($form.WindowState -eq [System.Windows.Forms.FormWindowState]::Normal) { $form.Bounds } else { $form.RestoreBounds }
-                [ordered]@{ X=$b.X; Y=$b.Y; W=$b.Width; H=$b.Height }
-            } else {
-                [ordered]@{ X=0; Y=0; W=1200; H=800 }
+                [ordered]@{ X = $b.X; Y = $b.Y; W = $b.Width; H = $b.Height }
+            }
+            else {
+                [ordered]@{ X = 0; Y = 0; W = 1200; H = 800 }
             }
         }
-        Search = [ordered]@{
-            Dir         = if ($txtDir) { $txtDir.Text } else { "" }
-            BodyEnabled = if ($chkBody) { [bool]$chkBody.Checked } else { $false }
-            TagEnabled  = if ($chkTag)  { [bool]$chkTag.Checked } else { $false }
-            BodyText    = if ($txtBody) { $txtBody.Text } else { "" }
-            TagText     = if ($txtTag)  { $txtTag.Text } else { "" }
-            TypeText    = if ($comboTypes -and $comboTypes.SelectedItem) { [string]$comboTypes.SelectedItem } else { "" }
+        Search        = [ordered]@{
+            Dir           = if ($txtDir) { $txtDir.Text } else { "" }
+            BodyEnabled   = if ($chkBody) { [bool]$chkBody.Checked } else { $false }
+            TagEnabled    = if ($chkTag) { [bool]$chkTag.Checked } else { $false }
+            BodyText      = if ($txtBody) { $txtBody.Text } else { "" }
+            TagText       = if ($txtTag) { $txtTag.Text } else { "" }
+            TypeText      = if ($comboTypes -and $comboTypes.SelectedItem) { [string]$comboTypes.SelectedItem } else { "" }
 
-            NoSubdirs   = if ($chkNoSubdirs) { [bool]$chkNoSubdirs.Checked } else { $false }
-            MinSizeText = if ($txtMinSize) { $txtMinSize.Text } else { "" }
-            MaxSizeText = if ($txtMaxSize) { $txtMaxSize.Text } else { "" }
-            AfterOn     = if ($dtAfter)  { [bool]$dtAfter.Checked } else { $false }
-            AfterDate   = if ($dtAfter)  { $dtAfter.Value } else { (Get-Date) }
-            BeforeOn    = if ($dtBefore) { [bool]$dtBefore.Checked } else { $false }
-            BeforeDate  = if ($dtBefore) { $dtBefore.Value } else { (Get-Date) }
+            NoSubdirs     = if ($chkNoSubdirs) { [bool]$chkNoSubdirs.Checked } else { $false }
+            MinSizeText   = if ($txtMinSize) { $txtMinSize.Text } else { "" }
+            MaxSizeText   = if ($txtMaxSize) { $txtMaxSize.Text } else { "" }
+            AfterOn       = if ($dtAfter) { [bool]$dtAfter.Checked } else { $false }
+            AfterDate     = if ($dtAfter) { $dtAfter.Value } else { (Get-Date) }
+            BeforeOn      = if ($dtBefore) { [bool]$dtBefore.Checked } else { $false }
+            BeforeDate    = if ($dtBefore) { $dtBefore.Value } else { (Get-Date) }
             UseEverything = if ($chkEverything) { [bool]$chkEverything.Checked } else { $false }
-            RecentDirs  = if ($txtDir -and $txtDir.Items) { @($txtDir.Items) } else { @() }
-            History     = if ($script:SearchHistory) { @($script:SearchHistory) } else { @() }
+            RecentDirs    = if ($txtDir -and $txtDir.Items) { @($txtDir.Items) } else { @() }
+            History       = if ($script:SearchHistory) { @($script:SearchHistory) } else { @() }
         }
-        Grid = [ordered]@{
+        Grid          = [ordered]@{
             Columns = @()
         }
     }
@@ -5608,66 +5748,74 @@ function Collect-Settings {
             foreach ($col in $grid.Columns) {
                 try {
                     $cfg.Grid.Columns += [ordered]@{
-                        Name = $col.Name
+                        Name         = $col.Name
                         DisplayIndex = $col.DisplayIndex
-                        Width = $col.Width
+                        Width        = $col.Width
                     }
-                } catch {}
+                }
+                catch {}
             }
         }
-    } catch {}
-# Selection + duplicates mode
-$selPaths = @()
-$curPath = $null
-try {
-    if ($grid -and $grid.SelectedRows -and $grid.SelectedRows.Count -gt 0) {
-        foreach ($r in $grid.SelectedRows) {
-            try {
-                $di = $r.DataBoundItem
-                if ($di -and $di.PSObject.Properties.Match("Path").Count -gt 0 -and $di.Path) { $selPaths += [string]$di.Path }
-                elseif ($di -and $di.PSObject.Properties.Match("FullPath").Count -gt 0 -and $di.FullPath) { $selPaths += [string]$di.FullPath }
-                else {
-                    try {
-                        $p = $r.Cells["Path"].Value
-                        if (-not $p) { $p = $r.Cells["FullPath"].Value }
-                        if ($p) { $selPaths += [string]$p }
-                    } catch { }
+    }
+    catch {}
+    # Selection + duplicates mode
+    $selPaths = @()
+    $curPath = $null
+    try {
+        if ($grid -and $grid.SelectedRows -and $grid.SelectedRows.Count -gt 0) {
+            foreach ($r in $grid.SelectedRows) {
+                try {
+                    $di = $r.DataBoundItem
+                    if ($di -and $di.PSObject.Properties.Match("Path").Count -gt 0 -and $di.Path) { $selPaths += [string]$di.Path }
+                    elseif ($di -and $di.PSObject.Properties.Match("FullPath").Count -gt 0 -and $di.FullPath) { $selPaths += [string]$di.FullPath }
+                    else {
+                        try {
+                            $p = $r.Cells["Path"].Value
+                            if (-not $p) { $p = $r.Cells["FullPath"].Value }
+                            if ($p) { $selPaths += [string]$p }
+                        }
+                        catch { }
+                    }
                 }
-            } catch { }
+                catch { }
+            }
         }
-    }
-    if ($grid -and $grid.CurrentRow) {
-        try {
-            $di2 = $grid.CurrentRow.DataBoundItem
-            if ($di2 -and $di2.PSObject.Properties.Match("Path").Count -gt 0 -and $di2.Path) { $curPath = [string]$di2.Path }
-            elseif ($di2 -and $di2.PSObject.Properties.Match("FullPath").Count -gt 0 -and $di2.FullPath) { $curPath = [string]$di2.FullPath }
-        } catch { }
-        if (-not $curPath) {
+        if ($grid -and $grid.CurrentRow) {
             try {
-                $p2 = $grid.CurrentRow.Cells["Path"].Value
-                if (-not $p2) { $p2 = $grid.CurrentRow.Cells["FullPath"].Value }
-                if ($p2) { $curPath = [string]$p2 }
-            } catch { }
+                $di2 = $grid.CurrentRow.DataBoundItem
+                if ($di2 -and $di2.PSObject.Properties.Match("Path").Count -gt 0 -and $di2.Path) { $curPath = [string]$di2.Path }
+                elseif ($di2 -and $di2.PSObject.Properties.Match("FullPath").Count -gt 0 -and $di2.FullPath) { $curPath = [string]$di2.FullPath }
+            }
+            catch { }
+            if (-not $curPath) {
+                try {
+                    $p2 = $grid.CurrentRow.Cells["Path"].Value
+                    if (-not $p2) { $p2 = $grid.CurrentRow.Cells["FullPath"].Value }
+                    if ($p2) { $curPath = [string]$p2 }
+                }
+                catch { }
+            }
+        }
+        $selPaths = @($selPaths | Where-Object { $_ } | Select-Object -Unique)
+    }
+    catch { }
+
+
+    # Persist selection + duplicates mode
+    try {
+        $cfg.Selection = [ordered]@{
+            Paths   = @($selPaths)
+            Current = $curPath
+        }
+        $cfg.Duplicates = [ordered]@{
+            Enabled           = [bool]$script:DupModeEnabled
+            HideNonDuplicates = [bool]$script:DupHideNonDuplicates
+            GroupByPath       = [bool]$script:DupGroupByPath
         }
     }
-    $selPaths = @($selPaths | Where-Object { $_ } | Select-Object -Unique)
-} catch { }
+    catch {}
 
-
-# Persist selection + duplicates mode
-try {
-    $cfg.Selection = [ordered]@{
-        Paths   = @($selPaths)
-        Current = $curPath
-    }
-    $cfg.Duplicates = [ordered]@{
-        Enabled          = [bool]$script:DupModeEnabled
-        HideNonDuplicates= [bool]$script:DupHideNonDuplicates
-        GroupByPath      = [bool]$script:DupGroupByPath
-    }
-} catch {}
-
-return $cfg
+    return $cfg
 
 }
 
@@ -5685,7 +5833,8 @@ function Save-Settings {
         [System.IO.File]::WriteAllText($tmp, $json, [System.Text.Encoding]::UTF8)
         Move-Item -LiteralPath $tmp -Destination $path -Force
         _Dbg ("Save-Settings: OK path='{0}'" -f $path)
-    } catch {
+    }
+    catch {
         _Dbg ("Save-Settings: ERROR {0} (path='{1}')" -f $_.Exception.Message, $path)
     }
 }
@@ -5697,9 +5846,11 @@ function Restore-Settings {
         $cfg = Read-SettingsFile
         if ($null -eq $cfg) { _Dbg "Restore-Settings: no cfg"; return }
         Apply-Settings $cfg
-    } catch {
+    }
+    catch {
         _Dbg ("Restore-Settings: ERROR {0}" -f $_.Exception.Message)
-    } finally {
+    }
+    finally {
         # Mark restore finished
         $script:IsRestoring = $false
         # Sync duplicates UI (button + menu) with restored state
@@ -5708,19 +5859,22 @@ function Restore-Settings {
             if (-not $script:DupModeEnabled -and -not $script:IsSearching) {
                 Set-Info "Ready"
             }
-        } catch { }
-_Dbg "Restore-Settings: done"
+        }
+        catch { }
+        _Dbg "Restore-Settings: done"
 
         # If something tried to trigger a search during restore, run it now
         if ($script:PendingSearchRequest) {
             $script:PendingSearchRequest = $false
             try {
                 if ($form -and -not $form.IsDisposed) {
-                    [void]$form.BeginInvoke([Action]{ Trigger-Search })
-                } else {
+                    [void]$form.BeginInvoke([Action] { Trigger-Search })
+                }
+                else {
                     Trigger-Search
                 }
-            } catch { }
+            }
+            catch { }
         }
     }
 }
@@ -5738,7 +5892,8 @@ function Invoke-MediaInfoJson {
         $json = & $exe "--Output=JSON" "--Full" "--Language=raw" "--" $Path 2>$null
         if ([string]::IsNullOrWhiteSpace($json)) { return $null }
         return ($json | ConvertFrom-Json -ErrorAction Stop)
-    } catch {
+    }
+    catch {
         return $null
     }
 }
@@ -5767,7 +5922,7 @@ function Try-GetVideoDescFromMediaInfo {
         if (-not $tracks -or $tracks.Count -eq 0) { return $null }
 
         $general = $tracks | Where-Object { $_.'@type' -eq 'General' } | Select-Object -First 1
-        $video   = $tracks | Where-Object { $_.'@type' -eq 'Video' }   | Select-Object -First 1
+        $video = $tracks | Where-Object { $_.'@type' -eq 'Video' }   | Select-Object -First 1
 
         $parts = @()
 
@@ -5781,27 +5936,28 @@ function Try-GetVideoDescFromMediaInfo {
         # Dimensions
         $w = $null; $h = $null
         if ($video) {
-            if ($video.Width)  { $w = [int]($video.Width -replace '[^\d]','') }
-            if ($video.Height) { $h = [int]($video.Height -replace '[^\d]','') }
+            if ($video.Width) { $w = [int]($video.Width -replace '[^\d]', '') }
+            if ($video.Height) { $h = [int]($video.Height -replace '[^\d]', '') }
         }
         if ($w -and $h) { $parts += ("{0}x{1}" -f $w, $h) }
 
         # Frame rate
         $fps = $null
-        if ($video -and $video.FrameRate) { $fps = ($video.FrameRate -replace '[^0-9\.,]','') }
+        if ($video -and $video.FrameRate) { $fps = ($video.FrameRate -replace '[^0-9\.,]', '') }
         if ($fps) { $parts += ("@ {0} fps" -f $fps) }
 
         # Bit rate
         $br = $null
-        if ($general -and $general.OverallBitRate) { $br = ($general.OverallBitRate -replace '[^\d]','') }
-        if (-not $br -and $video -and $video.BitRate) { $br = ($video.BitRate -replace '[^\d]','') }
+        if ($general -and $general.OverallBitRate) { $br = ($general.OverallBitRate -replace '[^\d]', '') }
+        if (-not $br -and $video -and $video.BitRate) { $br = ($video.BitRate -replace '[^\d]', '') }
         if ($br) {
             $brK = [math]::Round(([double]$br / 1000), 0)
             $parts += ("({0} kb/s)" -f $brK)
         }
 
         if ($parts.Count -gt 0) { return ($parts -join " ") }
-    } catch {}
+    }
+    catch {}
 
     return $null
 }
@@ -5852,13 +6008,13 @@ function Get-VideoDescription([string]$Path) {
 
         $dur = Pick @("Duration*", "Length*")
 
-        $w   = Pick @("Frame width*", "Width*")
+        $w = Pick @("Frame width*", "Width*")
 
-        $h   = Pick @("Frame height*", "Height*")
+        $h = Pick @("Frame height*", "Height*")
 
         $fps = Pick @("Frame rate*")
 
-        $br  = Pick @("Total bitrate*", "Bit rate*")
+        $br = Pick @("Total bitrate*", "Bit rate*")
 
 
 
@@ -5866,17 +6022,18 @@ function Get-VideoDescription([string]$Path) {
 
         if ($dur) { $parts += $dur }
 
-        if ($w -and $h) { $parts += ("{0}x{1}" -f $w,$h) }
+        if ($w -and $h) { $parts += ("{0}x{1}" -f $w, $h) }
 
         if ($fps) { $parts += ("@ {0}" -f $fps) }
 
-        if ($br)  { $parts += ("({0})" -f $br) }
+        if ($br) { $parts += ("({0})" -f $br) }
 
 
 
         if ($parts.Count -gt 0) { return ($parts -join " ") }
 
-    } catch {}
+    }
+    catch {}
 
     return $null
 
@@ -5896,7 +6053,7 @@ function Try-GetAudioDescFromMediaInfo {
         if (-not $tracks) { return $null }
 
         $general = $tracks | Where-Object { $_.'@type' -eq 'General' } | Select-Object -First 1
-        $audio   = $tracks | Where-Object { $_.'@type' -eq 'Audio' }   | Select-Object -First 1
+        $audio = $tracks | Where-Object { $_.'@type' -eq 'Audio' }   | Select-Object -First 1
         if (-not $audio) { return $null }
 
         # Duration
@@ -5909,31 +6066,32 @@ function Try-GetAudioDescFromMediaInfo {
                 $ts = [TimeSpan]::FromMilliseconds($durMs)
                 if ($ts.Hours -gt 0) { $dur = ("{0}h {1}m {2}s" -f $ts.Hours, $ts.Minutes, $ts.Seconds) }
                 else { $dur = ("{0}m {1}s" -f $ts.Minutes, $ts.Seconds) }
-            } catch {}
+            }
+            catch {}
         }
 
         $artist = $null
-        foreach ($k in @('Performer','Album_Performer','Composer','Artist')) {
+        foreach ($k in @('Performer', 'Album_Performer', 'Composer', 'Artist')) {
             if (-not [string]::IsNullOrWhiteSpace($general.$k)) { $artist = [string]$general.$k; break }
             if (-not [string]::IsNullOrWhiteSpace($audio.$k)) { $artist = [string]$audio.$k; break }
         }
 
         $album = $null
-        foreach ($k in @('Album','Album_More','Album/Performer')) {
+        foreach ($k in @('Album', 'Album_More', 'Album/Performer')) {
             if (-not [string]::IsNullOrWhiteSpace($general.$k)) { $album = [string]$general.$k; break }
             if (-not [string]::IsNullOrWhiteSpace($audio.$k)) { $album = [string]$audio.$k; break }
         }
 
         $title = $null
-        foreach ($k in @('Track_name','Title','Track')) {
+        foreach ($k in @('Track_name', 'Title', 'Track')) {
             if (-not [string]::IsNullOrWhiteSpace($general.$k)) { $title = [string]$general.$k; break }
             if (-not [string]::IsNullOrWhiteSpace($audio.$k)) { $title = [string]$audio.$k; break }
         }
 
         $parts = @()
         if ($artist) { $parts += $artist }
-        if ($album)  { $parts += $album }
-        if ($title)  { $parts += $title }
+        if ($album) { $parts += $album }
+        if ($title) { $parts += $title }
         $line1 = ($parts -join " - ")
         if ([string]::IsNullOrWhiteSpace($line1)) { $line1 = "Audio metadata" }
 
@@ -5942,7 +6100,7 @@ function Try-GetAudioDescFromMediaInfo {
 
         $bitrate = $null
         try { $bitrate = [double]$audio.BitRate } catch {}
-        if ($bitrate) { $line2Parts += ("{0} kb/s" -f [math]::Round($bitrate/1000)) }
+        if ($bitrate) { $line2Parts += ("{0} kb/s" -f [math]::Round($bitrate / 1000)) }
 
         $sr = $null
         try { $sr = [int]$audio.SamplingRate } catch {}
@@ -5956,7 +6114,8 @@ function Try-GetAudioDescFromMediaInfo {
 
         if ([string]::IsNullOrWhiteSpace($line2)) { return $line1 }
         return ($line1 + "`r`n" + $line2)
-    } catch {
+    }
+    catch {
         return $null
     }
 }
@@ -5982,12 +6141,12 @@ function Get-AudioDescription([string]$Path) {
             if ($item) {
                 $dur = $folder.GetDetailsOf($item, 27) # Duration (varies by locale)
                 $artist = $folder.GetDetailsOf($item, 13) # Contributing artists
-                $album  = $folder.GetDetailsOf($item, 14) # Album
-                $title  = $folder.GetDetailsOf($item, 21) # Title
+                $album = $folder.GetDetailsOf($item, 14) # Album
+                $title = $folder.GetDetailsOf($item, 21) # Title
                 $line1Parts = @()
                 if ($artist) { $line1Parts += $artist }
-                if ($album)  { $line1Parts += $album }
-                if ($title)  { $line1Parts += $title }
+                if ($album) { $line1Parts += $album }
+                if ($title) { $line1Parts += $title }
                 $line1 = ($line1Parts -join " - ")
                 $line2 = $dur
                 if (-not [string]::IsNullOrWhiteSpace($line1) -and -not [string]::IsNullOrWhiteSpace($line2)) { return ($line1 + "`r`n" + $line2) }
@@ -5995,7 +6154,8 @@ function Get-AudioDescription([string]$Path) {
                 if (-not [string]::IsNullOrWhiteSpace($line2)) { return $line2 }
             }
         }
-    } catch {}
+    }
+    catch {}
 
     return $null
 }
@@ -6021,7 +6181,8 @@ function Get-ZipDescription([string]$Path) {
 
             }
 
-        } finally {
+        }
+        finally {
 
             $zip.Dispose()
 
@@ -6035,7 +6196,8 @@ function Get-ZipDescription([string]$Path) {
 
         return ("Real size = {0}, {1:n0}% compression ratio" -f (Format-FileSize $real), $ratio)
 
-    } catch {
+    }
+    catch {
 
         return $null
 
@@ -6053,17 +6215,18 @@ function Get-ExeDescription([string]$Path) {
 
         $prod = $vi.ProductName
 
-        $ver  = $vi.ProductVersion
+        $ver = $vi.ProductVersion
 
         if ([string]::IsNullOrWhiteSpace($prod) -and [string]::IsNullOrWhiteSpace($ver)) { return $null }
 
         if ([string]::IsNullOrWhiteSpace($prod)) { return ("v{0}" -f $ver) }
 
-        if ([string]::IsNullOrWhiteSpace($ver))  { return $prod }
+        if ([string]::IsNullOrWhiteSpace($ver)) { return $prod }
 
         return ("{0} v{1}" -f $prod, $ver)
 
-    } catch { return $null }
+    }
+    catch { return $null }
 
 }
 
@@ -6097,51 +6260,57 @@ function Do-Describe {
 
     # Best-effort by type
 
-    if (@(".jpg",".jpeg",".png",".bmp",".gif",".tif",".tiff",".webp",".heic",".cr2",".nef",".arw",".dng",".orf",".raf") -contains $ext) {
+    if (@(".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp", ".heic", ".cr2", ".nef", ".arw", ".dng", ".orf", ".raf") -contains $ext) {
 
         $desc = Get-ImageDescription $p
 
-    } elseif (@(".avi",".mkv",".mov",".mp4",".mpg",".mpeg",".wmv",".m4v",".webm",".flv") -contains $ext) {
+    }
+    elseif (@(".avi", ".mkv", ".mov", ".mp4", ".mpg", ".mpeg", ".wmv", ".m4v", ".webm", ".flv") -contains $ext) {
 
         $desc = Get-VideoDescription $p
 
-    } elseif (@(".aac",".aiff",".alac",".flac",".m4a",".mp3",".ogg",".wav",".wma") -contains $ext) {
+    }
+    elseif (@(".aac", ".aiff", ".alac", ".flac", ".m4a", ".mp3", ".ogg", ".wav", ".wma") -contains $ext) {
 
         $desc = Get-AudioDescription $p
 
-    } elseif (@(".pdf",".docx",".xlsx",".pptx",".txt",".md",".csv",".tsv",".json",".xml",".yml",".yaml",".ini",".cfg",".log",".rtf",".ps1",".psm1",".psd1",".bat",".cmd",".reg") -contains $ext) {
+    }
+    elseif (@(".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md", ".csv", ".tsv", ".json", ".xml", ".yml", ".yaml", ".ini", ".cfg", ".log", ".rtf", ".ps1", ".psm1", ".psd1", ".bat", ".cmd", ".reg") -contains $ext) {
 
         $desc = Get-DocumentDescription $p
 
-    } elseif ($ext -eq ".zip") {
+    }
+    elseif ($ext -eq ".zip") {
 
         $desc = Get-ZipDescription $p
 
-    } elseif (@(".exe",".msi",".msix") -contains $ext) {
+    }
+    elseif (@(".exe", ".msi", ".msix") -contains $ext) {
 
         $desc = Get-ExeDescription $p
 
     }
     if ([string]::IsNullOrWhiteSpace($desc)) {
         # If it is a video and we could not extract metadata, suggest installing MediaInfo CLI
-        if ($script:LastMediaInfoMissing -and @(".mp4",".mkv",".mov",".avi",".wmv",".m4v",".webm",".flv",".mpg",".mpeg") -contains $ext) {
+        if ($script:LastMediaInfoMissing -and @(".mp4", ".mkv", ".mov", ".avi", ".wmv", ".m4v", ".webm", ".flv", ".mpg", ".mpeg") -contains $ext) {
             $desc = "No video metadata available with the built-in Windows extractor on this system.`r`n`r`n" +
-                    "Optional improvement: install MediaInfo CLI (mediainfo.exe).`r`n`r`n" +
-                    "Install (Windows winget):`r`n  winget install -e --id MediaArea.MediaInfo`r`n`r`n" +
-                    "Or download 'MediaInfo CLI' from MediaArea (mediaarea.net > MediaInfo > Download > Windows > CLI), then:`r`n" +
-                    "  - put mediainfo.exe next to this script, or`r`n  - add it to PATH."
-        } else {
+            "Optional improvement: install MediaInfo CLI (mediainfo.exe).`r`n`r`n" +
+            "Install (Windows winget):`r`n  winget install -e --id MediaArea.MediaInfo`r`n`r`n" +
+            "Or download 'MediaInfo CLI' from MediaArea (mediaarea.net > MediaInfo > Download > Windows > CLI), then:`r`n" +
+            "  - put mediainfo.exe next to this script, or`r`n  - add it to PATH."
+        }
+        else {
             $desc = "No additional description available for this file."
         }
     }
 
-# If it is a video and we could not extract metadata, suggest installing MediaInfo CLI
-    if ([string]::IsNullOrWhiteSpace($desc) -and $script:LastMediaInfoMissing -and @(".mp4",".mkv",".mov",".avi",".wmv",".m4v",".webm",".mpg",".mpeg") -contains $ext) {
+    # If it is a video and we could not extract metadata, suggest installing MediaInfo CLI
+    if ([string]::IsNullOrWhiteSpace($desc) -and $script:LastMediaInfoMissing -and @(".mp4", ".mkv", ".mov", ".avi", ".wmv", ".m4v", ".webm", ".mpg", ".mpeg") -contains $ext) {
         $desc = "No video metadata available with the built-in Windows extractor on this system.`r`n`r`n" +
-                "Optional improvement: install MediaInfo CLI (mediainfo.exe).`r`n`r`n" +
-                "Install (Windows winget):`r`n  winget install -e --id MediaArea.MediaInfo`r`n`r`n" +
-                "Or download 'MediaInfo CLI' from MediaArea (mediaarea.net > MediaInfo > Download > Windows > CLI), then:`r`n" +
-                "  - put mediainfo.exe next to this script, or`r`n  - add it to PATH."
+        "Optional improvement: install MediaInfo CLI (mediainfo.exe).`r`n`r`n" +
+        "Install (Windows winget):`r`n  winget install -e --id MediaArea.MediaInfo`r`n`r`n" +
+        "Or download 'MediaInfo CLI' from MediaArea (mediaarea.net > MediaInfo > Download > Windows > CLI), then:`r`n" +
+        "  - put mediainfo.exe next to this script, or`r`n  - add it to PATH."
     }
 
 
@@ -6187,7 +6356,7 @@ function Do-DeleteFiles {
 
 
 
-    $deleted=0; $failed=0
+    $deleted = 0; $failed = 0
 
     foreach ($p in $paths) {
 
@@ -6197,7 +6366,8 @@ function Do-DeleteFiles {
 
             $deleted++
 
-        } catch {
+        }
+        catch {
 
             $failed++
 
@@ -6207,7 +6377,7 @@ function Do-DeleteFiles {
 
 
 
-    Set-OpStatus ("Delete: deleted {0}, failed {1}" -f $deleted,$failed)
+    Set-OpStatus ("Delete: deleted {0}, failed {1}" -f $deleted, $failed)
 
     Refresh-TagsFound
 
@@ -6221,7 +6391,7 @@ function Do-DeleteFiles {
 
 # Copy tags (2-step)
 
-$script:CopiedTags     = @()
+$script:CopiedTags = @()
 
 $script:CopiedTagsFrom = $null
 
@@ -6279,7 +6449,8 @@ function Do-CopyTags {
 
             Set-Status "Tags copied. Select target files, then press Copy tags again to apply."
 
-        } catch {
+        }
+        catch {
 
             [System.Windows.Forms.MessageBox]::Show($form, "Cannot read selected file.", "Copy tags",
 
@@ -6303,9 +6474,9 @@ function Do-CopyTags {
 
     $tagStr = if ((Get-Count $script:CopiedTags) -gt 0) { ($script:CopiedTags -join " + ") } else { "(no tags)" }
 
-    $names  = @($targets | ForEach-Object { [System.IO.Path]::GetFileName($_) })
+    $names = @($targets | ForEach-Object { [System.IO.Path]::GetFileName($_) })
 
-    $list   = ($names -join "`r`n")
+    $list = ($names -join "`r`n")
 
 
 
@@ -6319,7 +6490,7 @@ function Do-CopyTags {
 
 
 
-    $changed=0; $skipped=0; $failed=0
+    $changed = 0; $skipped = 0; $failed = 0
 
     $newPreferred = New-Object System.Collections.Generic.List[string]
 
@@ -6351,7 +6522,8 @@ function Do-CopyTags {
 
                 [void]$newPreferred.Add($newPath)
 
-            } else {
+            }
+            else {
 
                 $skipped++
 
@@ -6359,7 +6531,8 @@ function Do-CopyTags {
 
             }
 
-        } catch {
+        }
+        catch {
 
             $failed++
 
@@ -6371,7 +6544,7 @@ function Do-CopyTags {
 
 
 
-    Set-OpStatus ("Copy tags: changed {0}, skipped {1}, failed {2}" -f $changed,$skipped,$failed)
+    Set-OpStatus ("Copy tags: changed {0}, skipped {1}, failed {2}" -f $changed, $skipped, $failed)
 
 
 
@@ -6406,15 +6579,16 @@ function Show-Help {
         $helpForm.ShowInTaskbar = $false
 
         $helpForm.Add_KeyDown({
-            param($s,$e)
-            try {
-                if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
-                    $helpForm.Close()
-                    $e.Handled = $true
-                    $e.SuppressKeyPress = $true
+                param($s, $e)
+                try {
+                    if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
+                        $helpForm.Close()
+                        $e.Handled = $true
+                        $e.SuppressKeyPress = $true
+                    }
                 }
-            } catch { }
-        })
+                catch { }
+            })
 
         $tabs = New-Object System.Windows.Forms.TabControl
         $tabs.Dock = "Fill"
@@ -6665,27 +6839,30 @@ Le statut en bas a droite reste reserve a l'activite :
         $btnClose.Add_Click({ $helpForm.Close() })
 
         $p.Add_Resize({
-            try { $btnClose.Left = $helpForm.ClientSize.Width - $btnClose.Width - 12 } catch { }
-        })
+                try { $btnClose.Left = $helpForm.ClientSize.Width - $btnClose.Width - 12 } catch { }
+            })
 
         $btnPrev.Add_Click({
-            try {
-                if ($tabs.SelectedIndex -gt 0) { $tabs.SelectedIndex-- }
-            } catch { }
-        })
+                try {
+                    if ($tabs.SelectedIndex -gt 0) { $tabs.SelectedIndex-- }
+                }
+                catch { }
+            })
 
         $btnNext.Add_Click({
-            try {
-                if ($tabs.SelectedIndex -lt ($tabs.TabPages.Count - 1)) { $tabs.SelectedIndex++ }
-            } catch { }
-        })
+                try {
+                    if ($tabs.SelectedIndex -lt ($tabs.TabPages.Count - 1)) { $tabs.SelectedIndex++ }
+                }
+                catch { }
+            })
 
         $tabs.Add_SelectedIndexChanged({
-            try {
-                $btnPrev.Enabled = ($tabs.SelectedIndex -gt 0)
-                $btnNext.Enabled = ($tabs.SelectedIndex -lt ($tabs.TabPages.Count - 1))
-            } catch { }
-        })
+                try {
+                    $btnPrev.Enabled = ($tabs.SelectedIndex -gt 0)
+                    $btnNext.Enabled = ($tabs.SelectedIndex -lt ($tabs.TabPages.Count - 1))
+                }
+                catch { }
+            })
 
         # initialize enabled state
         $btnPrev.Enabled = $false
@@ -6695,6 +6872,21 @@ Le statut en bas a droite reste reserve a l'activite :
         # Ensure help text is not shown as selected; keep focus on buttons, not the text area.
         try {
             $tabs.Add_SelectedIndexChanged({
+                    try {
+                        $tpSel = $tabs.SelectedTab
+                        if ($tpSel -ne $null) {
+                            $tbSel = $null
+                            foreach ($c in $tpSel.Controls) { if ($c -is [System.Windows.Forms.TextBox]) { $tbSel = $c; break } }
+                            if ($tbSel -ne $null) { $tbSel.SelectionStart = 0; $tbSel.SelectionLength = 0 }
+                        }
+                    }
+                    catch { }
+                    try { $btnClose.Focus() } catch { }
+                })
+        }
+        catch { }
+
+        $helpForm.Add_Shown({
                 try {
                     $tpSel = $tabs.SelectedTab
                     if ($tpSel -ne $null) {
@@ -6702,36 +6894,26 @@ Le statut en bas a droite reste reserve a l'activite :
                         foreach ($c in $tpSel.Controls) { if ($c -is [System.Windows.Forms.TextBox]) { $tbSel = $c; break } }
                         if ($tbSel -ne $null) { $tbSel.SelectionStart = 0; $tbSel.SelectionLength = 0 }
                     }
-                } catch { }
+                }
+                catch { }
                 try { $btnClose.Focus() } catch { }
             })
-        } catch { }
 
-        $helpForm.Add_Shown({
-            try {
-                $tpSel = $tabs.SelectedTab
-                if ($tpSel -ne $null) {
-                    $tbSel = $null
-                    foreach ($c in $tpSel.Controls) { if ($c -is [System.Windows.Forms.TextBox]) { $tbSel = $c; break } }
-                    if ($tbSel -ne $null) { $tbSel.SelectionStart = 0; $tbSel.SelectionLength = 0 }
-                }
-            } catch { }
-            try { $btnClose.Focus() } catch { }
-        })
-
-        $p.Controls.AddRange(@($btnPrev,$btnNext,$btnClose))
+        $p.Controls.AddRange(@($btnPrev, $btnNext, $btnClose))
 
         $helpForm.Controls.Add($tabs)
         $helpForm.Controls.Add($p)
 
         [void]$helpForm.ShowDialog($form)
 
-    } catch {
+    }
+    catch {
         # Fallback
         try {
             [System.Windows.Forms.MessageBox]::Show($form, $_.Exception.Message, "Help",
                 [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
-        } catch { }
+        }
+        catch { }
     }
 }
 
@@ -6767,13 +6949,15 @@ try {
 
         $comboTypes.SelectedItem = $any
 
-    } elseif ($comboTypes.Items.Count -gt 0) {
+    }
+    elseif ($comboTypes.Items.Count -gt 0) {
 
         $comboTypes.SelectedIndex = 0
 
     }
 
-} finally {
+}
+finally {
 
     $comboTypes.EndUpdate()
 
@@ -6784,27 +6968,29 @@ try {
 $script:IsInitializing = $false
 
 $comboTypes.Add_SelectedIndexChanged({
-    if ($script:IsInitializing -or $script:IsRestoring) { return }
-    try {
-        $null = $form.BeginInvoke([Action]{ Trigger-Search })
-    } catch [System.Management.Automation.PipelineStoppedException] {
-        Debug-Log "comboTypes SelectedIndexChanged: PipelineStoppedException ignored"
-    } catch {
-        Debug-Log ("comboTypes SelectedIndexChanged: ERROR {0}" -f $_.Exception.Message)
-    }
-})
+        if ($script:IsInitializing -or $script:IsRestoring) { return }
+        try {
+            $null = $form.BeginInvoke([Action] { Trigger-Search })
+        }
+        catch [System.Management.Automation.PipelineStoppedException] {
+            Debug-Log "comboTypes SelectedIndexChanged: PipelineStoppedException ignored"
+        }
+        catch {
+            Debug-Log ("comboTypes SelectedIndexChanged: ERROR {0}" -f $_.Exception.Message)
+        }
+    })
 
 
 
 function Update-FilterControls {
 
-    $txtBody.Enabled      = $chkBody.Checked
+    $txtBody.Enabled = $chkBody.Checked
 
     $btnResetBody.Enabled = $chkBody.Checked
 
-    $txtTag.Enabled       = $chkTag.Checked
+    $txtTag.Enabled = $chkTag.Checked
 
-    $btnResetTag.Enabled  = $chkTag.Checked
+    $btnResetTag.Enabled = $chkTag.Checked
 
     $comboFoundTags.Enabled = $true
 
@@ -6822,58 +7008,58 @@ $btnHelp.Add_Click({ Show-Help })
 
 $btnBrowse.Add_Click({
 
-    $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+        $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
 
-    $dlg.Description = "Choose a folder to scan"
+        $dlg.Description = "Choose a folder to scan"
 
-    $dlg.ShowNewFolderButton = $false
+        $dlg.ShowNewFolderButton = $false
 
-    if (-not [string]::IsNullOrWhiteSpace($txtDir.Text) -and (Test-Path -LiteralPath $txtDir.Text)) {
+        if (-not [string]::IsNullOrWhiteSpace($txtDir.Text) -and (Test-Path -LiteralPath $txtDir.Text)) {
 
-        $dlg.SelectedPath = $txtDir.Text
+            $dlg.SelectedPath = $txtDir.Text
 
-    }
+        }
 
-    if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {
+        if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {
 
-        $txtDir.Text = $dlg.SelectedPath
+            $txtDir.Text = $dlg.SelectedPath
 
             Add-RecentDir $txtDir.Text
-        Refresh-TagsFound
+            Refresh-TagsFound
 
-        Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
+            Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
 
-    }
+        }
 
-})
+    })
 
 
 
 $btnResetBody.Add_Click({
 
-    $txtBody.Text = ""
+        $txtBody.Text = ""
 
-    Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
+        Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
 
-})
+    })
 
 
 
 $btnResetTag.Add_Click({
 
-    $txtTag.Text = ""
+        $txtTag.Text = ""
 
-    Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
+        Run-SearchAndFillGrid -PreferredPaths @() -FallbackIndex 0
 
-})
+    })
 
 
 
 $btnSearch.Add_Click({
 
-    Trigger-Search
+        Trigger-Search
 
-})
+    })
 
 
 
@@ -6881,33 +7067,33 @@ $btnSearch.Add_Click({
 
 $txtBody.Add_KeyDown({
 
-    param($sender,$e)
+        param($sender, $e)
 
-    if ($e.KeyCode -eq "Enter") {
+        if ($e.KeyCode -eq "Enter") {
 
-        Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
+            Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
 
-        $e.SuppressKeyPress = $true
+            $e.SuppressKeyPress = $true
 
-    }
+        }
 
-})
+    })
 
 
 
 $txtTag.Add_KeyDown({
 
-    param($sender,$e)
+        param($sender, $e)
 
-    if ($e.KeyCode -eq "Enter") {
+        if ($e.KeyCode -eq "Enter") {
 
-        Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
+            Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
 
-        $e.SuppressKeyPress = $true
+            $e.SuppressKeyPress = $true
 
-    }
+        }
 
-})
+    })
 
 
 
@@ -6944,7 +7130,8 @@ function Do-MoveFiles {
             $name = [System.IO.Path]::GetFileName($p)
             $dest = Join-Path -Path $destDir -ChildPath $name
             if (Test-Path -LiteralPath $dest) { $collisions += $dest }
-        } catch {}
+        }
+        catch {}
     }
 
     $overwrite = $false
@@ -6968,7 +7155,8 @@ function Do-MoveFiles {
             Move-Item -LiteralPath $p -Destination $destDir -Force -ErrorAction Stop
             $moved++
             try { [void]$newPreferred.Add((Join-Path -Path $destDir -ChildPath $name)) } catch { }
-        } catch {
+        }
+        catch {
             Show-Error ("Move failed: {0}" -f $_.Exception.Message)
             break
         }
@@ -6987,7 +7175,8 @@ function Clear-DuplicateColors {
         foreach ($r in $grid.Rows) {
             try { $r.DefaultCellStyle.BackColor = [System.Drawing.Color]::Empty } catch {}
         }
-    } catch {}
+    }
+    catch {}
     $script:DuplicateColorsEnabled = $false
 }
 
@@ -6996,15 +7185,16 @@ function Get-ItemMediaSignature($item) {
     try {
         $path = [string]$item.Path
         $ext = Safe-ToLower ([System.IO.Path]::GetExtension($path))
-        if ($ext -in @(".jpg",".jpeg",".png",".bmp",".gif",".tif",".tiff",".webp")) {
+        if ($ext -in @(".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp")) {
             try {
                 $img = [System.Drawing.Image]::FromFile($path)
                 try { return ("img:{0}x{1}" -f $img.Width, $img.Height) } finally { $img.Dispose() }
-            } catch { return "img:?" }
+            }
+            catch { return "img:?" }
         }
 
         $mi = Get-MediaInfoCliPath
-        if ($mi -and ($ext -in @(".mp4",".mkv",".avi",".mov",".wmv",".mpg",".mpeg",".m4v",".webm",".mp3",".flac",".wav",".m4a",".aac",".ogg",".wma"))) {
+        if ($mi -and ($ext -in @(".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".m4v", ".webm", ".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".wma"))) {
             try {
                 $json = & $mi "--Output=JSON" "--Language=raw" $path 2>$null
                 if ($LASTEXITCODE -eq 0 -and $json) {
@@ -7013,17 +7203,19 @@ function Get-ItemMediaSignature($item) {
                     $v = $tracks | Where-Object { $_."@type" -eq "Video" } | Select-Object -First 1
                     $a = $tracks | Where-Object { $_."@type" -eq "Audio" } | Select-Object -First 1
                     if ($v) {
-                        $dur = $v.Duration; $w=$v.Width; $h=$v.Height
-                        return ("vid:{0}:{1}x{2}" -f $dur,$w,$h)
+                        $dur = $v.Duration; $w = $v.Width; $h = $v.Height
+                        return ("vid:{0}:{1}x{2}" -f $dur, $w, $h)
                     }
                     if ($a) {
-                        $dur = $a.Duration; $br=$a.BitRate
-                        return ("aud:{0}:{1}" -f $dur,$br)
+                        $dur = $a.Duration; $br = $a.BitRate
+                        return ("aud:{0}:{1}" -f $dur, $br)
                     }
                 }
-            } catch {}
+            }
+            catch {}
         }
-    } catch {}
+    }
+    catch {}
     return "other"
 }
 
@@ -7053,7 +7245,8 @@ function Do-ToggleDuplicates {
         # Refresh main status line with the current displayed result count
         try { Update-FoundCountStatus -UpdatingView } catch { }
 
-    } else {
+    }
+    else {
 
         $script:DupModeEnabled = $false
 
@@ -7061,7 +7254,8 @@ function Do-ToggleDuplicates {
         if ($null -ne $script:DupSavedItems) {
             try {
                 $script:CurrentItems = @($script:DupSavedItems)
-            } catch { }
+            }
+            catch { }
             $script:DupSavedItems = $null
 
             # Refill grid in the original order (do not auto-fit columns; keep user layout)
@@ -7090,7 +7284,7 @@ function Do-ToggleDuplicates {
 
         # Refresh main status line with the current displayed result count
         try { Update-FoundCountStatus -UpdatingView } catch { }
-}
+    }
 }
 
 
@@ -7107,7 +7301,8 @@ function Update-DuplicateUi {
         }
         # Bottom-right is reserved for activity (Searching/Ready). Do not overwrite with counts.
         if (-not $script:IsSearching) { Set-Info "Ready" }
-} else {
+    }
+    else {
         foreach ($c in @($grid.Columns)) { try { $c.SortMode = [System.Windows.Forms.DataGridViewColumnSortMode]::Automatic } catch {} }
         $btnDup.Text = "Show d&uplicates (Ctrl+U)"
         if ($script:CtxDupItem) { $script:CtxDupItem.Text = "Show d&uplicates (Ctrl+U)" }
@@ -7125,7 +7320,7 @@ function Get-FileSha256Cached([string]$Path) {
         if ($null -eq $fi) { return $null }
 
         $size = [int64]$fi.Length
-        $lw   = [datetime]$fi.LastWriteTimeUtc
+        $lw = [datetime]$fi.LastWriteTimeUtc
 
         $cached = $null
         if ($script:FileHashCache -and $script:FileHashCache.ContainsKey($Path)) {
@@ -7140,24 +7335,28 @@ function Get-FileSha256Cached([string]$Path) {
             $fs = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
             try {
                 $hashBytes = $sha.ComputeHash($fs)
-            } finally {
+            }
+            finally {
                 $fs.Dispose()
             }
-        } finally {
+        }
+        finally {
             $sha.Dispose()
         }
         $hash = ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
 
         try {
             $script:FileHashCache[$Path] = [PSCustomObject]@{
-                Hash = $hash
-                Size = $size
+                Hash         = $hash
+                Size         = $size
                 LastWriteUtc = $lw
             }
-        } catch { }
+        }
+        catch { }
 
         return $hash
-    } catch {
+    }
+    catch {
         return $null
     }
 }
@@ -7177,186 +7376,192 @@ function Ensure-DuplicateWorker {
         $bw.WorkerReportsProgress = $true
 
         $bw.add_DoWork({
-            param($sender, $e)
+                param($sender, $e)
 
-            $a = $e.Argument
+                $a = $e.Argument
 
-            $prevRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-            [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $script:MainRunspace
+                $prevRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+                [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $script:MainRunspace
 
-            try {
-                $token = [string]$a.Token
-                $items = @($a.Items)
+                try {
+                    $token = [string]$a.Token
+                    $items = @($a.Items)
 
-                $totalStage1 = [Math]::Max(1, $items.Count)
-                $doneStage1  = 0
-                try { $sender.ReportProgress(0, "Preparing duplicates... 0%") } catch { }
+                    $totalStage1 = [Math]::Max(1, $items.Count)
+                    $doneStage1 = 0
+                    try { $sender.ReportProgress(0, "Preparing duplicates... 0%") } catch { }
 
-                $useHash = [bool]$a.UseHash
+                    $useHash = [bool]$a.UseHash
 
-                # Build candidate groups by (size + ext), using cached SizeBytes when present to avoid network metadata hits.
-                $groups = @{}
-                foreach ($it in $items) {
-                    if ($sender.CancellationPending) { $e.Cancel = $true; return }
-
-                    $doneStage1++
-                    if (($doneStage1 % 25) -eq 0 -or $doneStage1 -eq $totalStage1) {
-                        $pct = [int](20 * $doneStage1 / $totalStage1)
-                        try { $sender.ReportProgress($pct, "Preparing duplicates... $pct%") } catch { }
-                    }
-
-
-                    $p = [string]$it.Path
-                    if ([string]::IsNullOrWhiteSpace($p)) { continue }
-
-                    $size = 0
-                    try {
-                        if ($it -and ($it.PSObject.Properties.Name -contains "SizeBytes")) {
-                            $size = [int64]$it.SizeBytes
-                        }
-                    } catch { $size = 0 }
-
-                    if ($size -le 0) {
-                        $fi = Get-Item -LiteralPath $p -ErrorAction SilentlyContinue
-                        if ($null -eq $fi) { continue }
-                        $size = [int64]$fi.Length
-                    }
-
-                    $ext = [string]([System.IO.Path]::GetExtension($p))
-                    $key = "{0}|{1}" -f $size, ($ext.ToLowerInvariant())
-
-                    if (-not $groups.ContainsKey($key)) { $groups[$key] = New-Object System.Collections.Generic.List[string] }
-                    [void]$groups[$key].Add($p)
-                }
-
-                $dupMap = @{}
-                $groupId = 0
-
-                # Stage 2 progress (hash-confirm)
-                $hashTotal = 0
-                if ($useHash) {
-                    foreach ($k0 in $groups.Keys) {
-                        $l0 = $groups[$k0]
-                        if ($null -ne $l0 -and $l0.Count -ge 2) { $hashTotal += $l0.Count }
-                    }
-                    $hashTotal = [Math]::Max(1, $hashTotal)
-                }
-                $hashDone = 0
-                if ($useHash) { try { $sender.ReportProgress(20, "Hashing duplicates... 0%") } catch { } }
-
-
-                foreach ($k in $groups.Keys) {
-                    if ($sender.CancellationPending) { $e.Cancel = $true; return }
-
-                    $list = $groups[$k]
-                    if ($null -eq $list -or $list.Count -lt 2) { continue }
-
-                    if (-not $useHash) {
-                        foreach ($p in $list) { $dupMap[[string]$p] = $groupId }
-                        $groupId++
-                        continue
-                    }
-
-                    # Hash-confirm within this candidate group (same size+ext)
-                    $hgroups = @{}
-                    foreach ($p in $list) {
+                    # Build candidate groups by (size + ext), using cached SizeBytes when present to avoid network metadata hits.
+                    $groups = @{}
+                    foreach ($it in $items) {
                         if ($sender.CancellationPending) { $e.Cancel = $true; return }
 
-                        if ($useHash) {
-                            $hashDone++
-                            if (($hashDone % 10) -eq 0 -or $hashDone -eq $hashTotal) {
-                                $pct2 = 20 + [int](80 * $hashDone / $hashTotal)
-                                try { $sender.ReportProgress($pct2, "Hashing duplicates... $pct2%") } catch { }
+                        $doneStage1++
+                        if (($doneStage1 % 25) -eq 0 -or $doneStage1 -eq $totalStage1) {
+                            $pct = [int](20 * $doneStage1 / $totalStage1)
+                            try { $sender.ReportProgress($pct, "Preparing duplicates... $pct%") } catch { }
+                        }
+
+
+                        $p = [string]$it.Path
+                        if ([string]::IsNullOrWhiteSpace($p)) { continue }
+
+                        $size = 0
+                        try {
+                            if ($it -and ($it.PSObject.Properties.Name -contains "SizeBytes")) {
+                                $size = [int64]$it.SizeBytes
                             }
                         }
+                        catch { $size = 0 }
 
+                        if ($size -le 0) {
+                            $fi = Get-Item -LiteralPath $p -ErrorAction SilentlyContinue
+                            if ($null -eq $fi) { continue }
+                            $size = [int64]$fi.Length
+                        }
 
-                        $h = Get-FileSha256Cached -Path ([string]$p)
-                        if (-not $h) { continue }
+                        $ext = [string]([System.IO.Path]::GetExtension($p))
+                        $key = "{0}|{1}" -f $size, ($ext.ToLowerInvariant())
 
-                        if (-not $hgroups.ContainsKey($h)) { $hgroups[$h] = New-Object System.Collections.Generic.List[string] }
-                        [void]$hgroups[$h].Add([string]$p)
+                        if (-not $groups.ContainsKey($key)) { $groups[$key] = New-Object System.Collections.Generic.List[string] }
+                        [void]$groups[$key].Add($p)
                     }
 
-                    foreach ($h in $hgroups.Keys) {
+                    $dupMap = @{}
+                    $groupId = 0
+
+                    # Stage 2 progress (hash-confirm)
+                    $hashTotal = 0
+                    if ($useHash) {
+                        foreach ($k0 in $groups.Keys) {
+                            $l0 = $groups[$k0]
+                            if ($null -ne $l0 -and $l0.Count -ge 2) { $hashTotal += $l0.Count }
+                        }
+                        $hashTotal = [Math]::Max(1, $hashTotal)
+                    }
+                    $hashDone = 0
+                    if ($useHash) { try { $sender.ReportProgress(20, "Hashing duplicates... 0%") } catch { } }
+
+
+                    foreach ($k in $groups.Keys) {
                         if ($sender.CancellationPending) { $e.Cancel = $true; return }
 
-                        $sub = $hgroups[$h]
-                        if ($null -ne $sub -and $sub.Count -ge 2) {
-                            foreach ($p in $sub) { $dupMap[[string]$p] = $groupId }
+                        $list = $groups[$k]
+                        if ($null -eq $list -or $list.Count -lt 2) { continue }
+
+                        if (-not $useHash) {
+                            foreach ($p in $list) { $dupMap[[string]$p] = $groupId }
                             $groupId++
+                            continue
+                        }
+
+                        # Hash-confirm within this candidate group (same size+ext)
+                        $hgroups = @{}
+                        foreach ($p in $list) {
+                            if ($sender.CancellationPending) { $e.Cancel = $true; return }
+
+                            if ($useHash) {
+                                $hashDone++
+                                if (($hashDone % 10) -eq 0 -or $hashDone -eq $hashTotal) {
+                                    $pct2 = 20 + [int](80 * $hashDone / $hashTotal)
+                                    try { $sender.ReportProgress($pct2, "Hashing duplicates... $pct2%") } catch { }
+                                }
+                            }
+
+
+                            $h = Get-FileSha256Cached -Path ([string]$p)
+                            if (-not $h) { continue }
+
+                            if (-not $hgroups.ContainsKey($h)) { $hgroups[$h] = New-Object System.Collections.Generic.List[string] }
+                            [void]$hgroups[$h].Add([string]$p)
+                        }
+
+                        foreach ($h in $hgroups.Keys) {
+                            if ($sender.CancellationPending) { $e.Cancel = $true; return }
+
+                            $sub = $hgroups[$h]
+                            if ($null -ne $sub -and $sub.Count -ge 2) {
+                                foreach ($p in $sub) { $dupMap[[string]$p] = $groupId }
+                                $groupId++
+                            }
                         }
                     }
-                }
 
-                # Total "duplicate files" shown: count of items that are in a dup group.
-                $dupTotal = 0
-                foreach ($it in $items) {
-                    $p = [string]$it.Path
-                    if ($dupMap.ContainsKey($p)) { $dupTotal++ }
-                }
+                    # Total "duplicate files" shown: count of items that are in a dup group.
+                    $dupTotal = 0
+                    foreach ($it in $items) {
+                        $p = [string]$it.Path
+                        if ($dupMap.ContainsKey($p)) { $dupTotal++ }
+                    }
 
-                $e.Result = [PSCustomObject]@{
-                    Token = $token
-                    Map   = $dupMap
-                    Total = $dupTotal
-                }
+                    $e.Result = [PSCustomObject]@{
+                        Token = $token
+                        Map   = $dupMap
+                        Total = $dupTotal
+                    }
 
-            } catch {
-                $e.Result = [PSCustomObject]@{
-                    Token = [string]$a.Token
-                    Map   = @{}
-                    Total = 0
-                    Error = $_.Exception.Message
                 }
-            } finally {
-                [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $prevRunspace
-            }
-        })
+                catch {
+                    $e.Result = [PSCustomObject]@{
+                        Token = [string]$a.Token
+                        Map   = @{}
+                        Total = 0
+                        Error = $_.Exception.Message
+                    }
+                }
+                finally {
+                    [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $prevRunspace
+                }
+            })
 
 
         $bw.add_ProgressChanged({
-            param($sender, $e)
+                param($sender, $e)
 
-            try { Progress-End } catch { }
+                try { Progress-End } catch { }
 
-            try {
-                Progress-Update -Percent ([int]$e.ProgressPercentage) -Text ([string]$e.UserState)
-            } catch { }
-        })
+                try {
+                    Progress-Update -Percent ([int]$e.ProgressPercentage) -Text ([string]$e.UserState)
+                }
+                catch { }
+            })
 
         $bw.add_RunWorkerCompleted({
-            param($sender, $e)
-            try {
-                if ($e.Cancelled) {
-                    if (-not $script:IsSearching) { try { Set-Info "Ready" } catch { } }
-                    return
+                param($sender, $e)
+                try {
+                    if ($e.Cancelled) {
+                        if (-not $script:IsSearching) { try { Set-Info "Ready" } catch { } }
+                        return
+                    }
+                    if ($e.Error) {
+                        Debug-Log ("DupWorker: error: {0}" -f $e.Error.Exception.Message)
+                        if (-not $script:IsSearching) { try { Set-Info "Ready" } catch { } }
+                        return
+                    }
+
+                    $res = $e.Result
+                    if ($null -eq $res) { return }
+
+                    # Ignore stale results
+                    if ($script:DupComputeToken -and ([string]$res.Token -ne [string]$script:DupComputeToken)) {
+                        return
+                    }
+
+                    $script:DupGroupMap = @{}
+                    try { $script:DupGroupMap = $res.Map } catch { $script:DupGroupMap = @{} }
+
+                    try { $script:DupTotal = [int]$res.Total } catch { $script:DupTotal = 0 }
+
+                    Apply-DuplicateUiFromMap
                 }
-                if ($e.Error) {
-                    Debug-Log ("DupWorker: error: {0}" -f $e.Error.Exception.Message)
-                    if (-not $script:IsSearching) { try { Set-Info "Ready" } catch { } }
-                    return
-                }
-
-                $res = $e.Result
-                if ($null -eq $res) { return }
-
-                # Ignore stale results
-                if ($script:DupComputeToken -and ([string]$res.Token -ne [string]$script:DupComputeToken)) {
-                    return
-                }
-
-                $script:DupGroupMap = @{}
-                try { $script:DupGroupMap = $res.Map } catch { $script:DupGroupMap = @{} }
-
-                try { $script:DupTotal = [int]$res.Total } catch { $script:DupTotal = 0 }
-
-                Apply-DuplicateUiFromMap
-            } catch { }
-        })
+                catch { }
+            })
 
         $script:DupWorker = $bw
-    } catch { }
+    }
+    catch { }
 }
 
 function Cancel-DuplicateWorker {
@@ -7364,7 +7569,8 @@ function Cancel-DuplicateWorker {
         if ($script:DupWorker -and $script:DupWorker.IsBusy) {
             $script:DupWorker.CancelAsync() | Out-Null
         }
-    } catch { }
+    }
+    catch { }
 }
 
 function Apply-DuplicateUiFromMap {
@@ -7374,12 +7580,13 @@ function Apply-DuplicateUiFromMap {
             if ($script:DupHideNonDuplicates) {
                 $script:CurrentItems = @(
                     $script:CurrentItems | Where-Object { $script:DupGroupMap.ContainsKey([string]$_.Path) } |
-                    Sort-Object -Property @{ Expression = { $script:DupGroupMap[[string]$_.Path] } }, Path
+                        Sort-Object -Property @{ Expression = { $script:DupGroupMap[[string]$_.Path] } }, Path
                 )
-            } else {
+            }
+            else {
                 $script:CurrentItems = @(
                     $script:CurrentItems |
-                    Sort-Object -Property @{ Expression = { if ($script:DupGroupMap.ContainsKey([string]$_.Path)) { $script:DupGroupMap[[string]$_.Path] } else { [int]::MaxValue } } }, Path
+                        Sort-Object -Property @{ Expression = { if ($script:DupGroupMap.ContainsKey([string]$_.Path)) { $script:DupGroupMap[[string]$_.Path] } else { [int]::MaxValue } } }, Path
                 )
             }
 
@@ -7396,7 +7603,8 @@ function Apply-DuplicateUiFromMap {
             # Visibility rule
             if ($script:DupModeEnabled -and $script:DupHideNonDuplicates) {
                 $row.Visible = $isDup
-            } else {
+            }
+            else {
                 $row.Visible = $true
             }
 
@@ -7420,7 +7628,8 @@ function Apply-DuplicateUiFromMap {
 
         Update-DuplicateUi
         if (-not $script:IsSearching) { Set-Info "Ready" }
-    } catch { }
+    }
+    catch { }
 }
 
 
@@ -7450,15 +7659,16 @@ function Do-FindDuplicates {
         $script:DupComputeToken = $token
 
         try { Set-Info "Hashing duplicates..." } catch { }
-    try { Progress-Start "Hashing duplicates..." -Indeterminate } catch { }
+        try { Progress-Start "Hashing duplicates..." -Indeterminate } catch { }
 
         try {
             $script:DupWorker.RunWorkerAsync([PSCustomObject]@{
-                Token   = $token
-                Items   = @($script:CurrentItems)
-                UseHash = $true
-            }) | Out-Null
-        } catch {
+                    Token   = $token
+                    Items   = @($script:CurrentItems)
+                    UseHash = $true
+                }) | Out-Null
+        }
+        catch {
             # Fallback: if worker failed to start, compute without hash synchronously
             $script:DupUseHash = $false
         }
@@ -7478,7 +7688,8 @@ function Do-FindDuplicates {
                 if ($it -and ($it.PSObject.Properties.Name -contains "SizeBytes")) {
                     $size = [int64]$it.SizeBytes
                 }
-            } catch { $size = 0 }
+            }
+            catch { $size = 0 }
 
             if ($size -le 0) {
                 $fi = Get-Item -LiteralPath $p -ErrorAction SilentlyContinue
@@ -7486,12 +7697,13 @@ function Do-FindDuplicates {
                 $size = [int64]$fi.Length
             }
 
-            $ext  = [string]([System.IO.Path]::GetExtension($p))
-            $key  = "{0}|{1}" -f $size, ($ext.ToLowerInvariant())
+            $ext = [string]([System.IO.Path]::GetExtension($p))
+            $key = "{0}|{1}" -f $size, ($ext.ToLowerInvariant())
 
             if (-not $groups.ContainsKey($key)) { $groups[$key] = New-Object System.Collections.Generic.List[string] }
             [void]$groups[$key].Add($p)
-        } catch {
+        }
+        catch {
             # ignore unreadable entries
         }
     }
@@ -7532,28 +7744,31 @@ function Get-ZipXmlEntry {
             if (-not $e) { return $null }
             $sr = New-Object System.IO.StreamReader($e.Open())
             try { return $sr.ReadToEnd() } finally { $sr.Dispose() }
-        } finally { $zip.Dispose() }
-    } catch { return $null }
+        }
+        finally { $zip.Dispose() }
+    }
+    catch { return $null }
 }
 
 function Get-DocumentDescription([string]$Path) {
     $ext = Safe-ToLower ([System.IO.Path]::GetExtension($Path))
 
-    if (@(".txt",".log",".csv",".md",".ini",".cfg",".json",".xml",".yml",".yaml",".ps1",".psm1",".psd1",".bat",".cmd",".reg",".sql") -contains $ext) {
+    if (@(".txt", ".log", ".csv", ".md", ".ini", ".cfg", ".json", ".xml", ".yml", ".yaml", ".ps1", ".psm1", ".psd1", ".bat", ".cmd", ".reg", ".sql") -contains $ext) {
         try {
             $lines = 0
             $sr = New-Object System.IO.StreamReader($Path, $true)
             try { while ($null -ne $sr.ReadLine()) { $lines++ } } finally { $sr.Dispose() }
             $enc = $null
             try { $enc = $sr.CurrentEncoding.WebName } catch {}
-            if ($enc) { return ("Lines: {0}`r`nEncoding: {1}" -f $lines,$enc) }
+            if ($enc) { return ("Lines: {0}`r`nEncoding: {1}" -f $lines, $enc) }
             return ("Lines: {0}" -f $lines)
-        } catch {}
+        }
+        catch {}
     }
 
-    if (@(".docx",".xlsx",".pptx") -contains $ext) {
+    if (@(".docx", ".xlsx", ".pptx") -contains $ext) {
         $core = Get-ZipXmlEntry -ZipPath $Path -EntryName "docProps/core.xml"
-        $app  = Get-ZipXmlEntry -ZipPath $Path -EntryName "docProps/app.xml"
+        $app = Get-ZipXmlEntry -ZipPath $Path -EntryName "docProps/app.xml"
         $parts = @()
         try {
             if ($core) {
@@ -7565,14 +7780,16 @@ function Get-DocumentDescription([string]$Path) {
                 if ($creator) { $parts += ("Author: {0}" -f $creator) }
                 if ($last) { $parts += ("Last modified by: {0}" -f $last) }
             }
-        } catch {}
+        }
+        catch {}
         try {
             if ($app) {
                 [xml]$a = $app
                 $appname = $a.Properties.Application
                 if ($appname) { $parts += ("Application: {0}" -f $appname) }
             }
-        } catch {}
+        }
+        catch {}
         if ((Get-Count $parts) -gt 0) { return ($parts -join "`r`n") }
     }
 
@@ -7581,19 +7798,21 @@ function Get-DocumentDescription([string]$Path) {
             $fs = [System.IO.File]::OpenRead($Path)
             try {
                 $buf = New-Object byte[] (200000)
-                $n = $fs.Read($buf,0,$buf.Length)
+                $n = $fs.Read($buf, 0, $buf.Length)
                 if ($n -gt 0) {
-                    $txt = [System.Text.Encoding]::ASCII.GetString($buf,0,$n)
-                    $title=$null; $author=$null
-                    try { $m=[regex]::Match($txt,'/Title\s*\(([^)]{1,200})\)'); if ($m.Success) { $title=$m.Groups[1].Value } } catch {}
-                    try { $m=[regex]::Match($txt,'/Author\s*\(([^)]{1,200})\)'); if ($m.Success) { $author=$m.Groups[1].Value } } catch {}
-                    $parts=@()
+                    $txt = [System.Text.Encoding]::ASCII.GetString($buf, 0, $n)
+                    $title = $null; $author = $null
+                    try { $m = [regex]::Match($txt, '/Title\s*\(([^)]{1,200})\)'); if ($m.Success) { $title = $m.Groups[1].Value } } catch {}
+                    try { $m = [regex]::Match($txt, '/Author\s*\(([^)]{1,200})\)'); if ($m.Success) { $author = $m.Groups[1].Value } } catch {}
+                    $parts = @()
                     if ($title) { $parts += ("Title: {0}" -f $title) }
                     if ($author) { $parts += ("Author: {0}" -f $author) }
                     if ((Get-Count $parts) -gt 0) { return ($parts -join "`r`n") }
                 }
-            } finally { $fs.Dispose() }
-        } catch {}
+            }
+            finally { $fs.Dispose() }
+        }
+        catch {}
     }
 
     return $null
@@ -7625,19 +7844,19 @@ $btnCopyTags.Add_Click({ Do-CopyTags })
 $btnDup.Add_Click({ Do-ToggleDuplicates })
 $chkBody.Add_CheckedChanged({
 
-    Update-FilterControls
+        Update-FilterControls
 
-    Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
+        Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
 
-})
+    })
 
 $chkTag.Add_CheckedChanged({
 
-    Update-FilterControls
+        Update-FilterControls
 
-    Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
+        Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
 
-})
+    })
 
 
 
@@ -7645,35 +7864,37 @@ $chkTag.Add_CheckedChanged({
 
 $comboFoundTags.Add_SelectionChangeCommitted({
 
-    $t = [string]$comboFoundTags.SelectedItem
+        $t = [string]$comboFoundTags.SelectedItem
 
-    if (-not [string]::IsNullOrWhiteSpace($t)) {
+        if (-not [string]::IsNullOrWhiteSpace($t)) {
 
-        if ([string]::IsNullOrWhiteSpace($txtTag.Text)) {
+            if ([string]::IsNullOrWhiteSpace($txtTag.Text)) {
 
-            $txtTag.Text = $t
+                $txtTag.Text = $t
 
-        } else {
+            }
+            else {
 
-            $txtTag.Text = ($txtTag.Text.Trim() + " ou " + $t)
+                $txtTag.Text = ($txtTag.Text.Trim() + " ou " + $t)
+
+            }
+
+            # Si le filtre Tag n'est pas actif, l'activer (la recherche se déclenchera via CheckedChanged)
+
+            if (-not $chkTag.Checked) {
+
+                $chkTag.Checked = $true
+
+            }
+            else {
+
+                Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
+
+            }
 
         }
 
-        # Si le filtre Tag n'est pas actif, l'activer (la recherche se déclenchera via CheckedChanged)
-
-        if (-not $chkTag.Checked) {
-
-            $chkTag.Checked = $true
-
-        } else {
-
-            Run-SearchAndFillGrid -PreferredPaths @(Get-SelectedPaths) -FallbackIndex (Get-FirstSelectedIndex)
-
-        }
-
-    }
-
-})
+    })
 
 
 
@@ -7681,62 +7902,63 @@ $comboFoundTags.Add_SelectionChangeCommitted({
 
 $grid.Add_KeyDown({
 
-    param($sender,$e)
+        param($sender, $e)
 
 
 
 
-    # Esc interrupts an in-progress search
-    try {
-        if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
-            if ($script:IsSearching) {
-                Request-InterruptSearch
-                $e.SuppressKeyPress = $true
-                $e.Handled = $true
-                return
+        # Esc interrupts an in-progress search
+        try {
+            if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
+                if ($script:IsSearching) {
+                    Request-InterruptSearch
+                    $e.SuppressKeyPress = $true
+                    $e.Handled = $true
+                    return
+                }
             }
         }
-    } catch { }
-    if     ($e.Control -and $e.KeyCode -eq "A") { $btnAdd.PerformClick();        $e.SuppressKeyPress = $true }
+        catch { }
+        if ($e.Control -and $e.KeyCode -eq "A") { $btnAdd.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "R") { $btnRemove.PerformClick();     $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "R") { $btnRemove.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "B") { $btnBodyRename.PerformClick(); $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "B") { $btnBodyRename.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "C") { $btnCopyPath.PerformClick();   $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "C") { $btnCopyPath.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "E") { $btnExecute.PerformClick();    $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "E") { $btnExecute.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "T") { $btnCopyTags.PerformClick();   $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "T") { $btnCopyTags.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "S") { $btnSearch.PerformClick();     $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "S") { $btnSearch.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "O") { $btnBrowse.PerformClick();     $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "O") { $btnBrowse.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "F") { $btnOpenFolder.PerformClick();        $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "F") { $btnOpenFolder.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "D") { $btnDescribe.PerformClick();          $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "D") { $btnDescribe.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.Control -and $e.KeyCode -eq "L") { $btnDelete.PerformClick();            $e.SuppressKeyPress = $true }
-    elseif ($e.Control -and $e.KeyCode -eq "H") { $btnHelp.PerformClick();      $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "L") { $btnDelete.PerformClick(); $e.SuppressKeyPress = $true }
+        elseif ($e.Control -and $e.KeyCode -eq "H") { $btnHelp.PerformClick(); $e.SuppressKeyPress = $true }
 
-    elseif ($e.KeyCode -eq "Enter") {
+        elseif ($e.KeyCode -eq "Enter") {
 
-        if (Ensure-ExactlyOneSelected) {
+            if (Ensure-ExactlyOneSelected) {
 
-            $p = @(Get-SelectedPaths)[0]
+                $p = @(Get-SelectedPaths)[0]
 
-            if ($p) { Execute-Paths @($p) }
+                if ($p) { Execute-Paths @($p) }
+
+            }
+
+            $e.SuppressKeyPress = $true
 
         }
+        if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::M) { $btnMove.PerformClick(); $e.Handled = $true; return }
+        if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::U) { $btnDup.PerformClick(); $e.Handled = $true; return }
 
-        $e.SuppressKeyPress = $true
-
-    }
-        if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::M) { $btnMove.PerformClick(); $e.Handled=$true; return }
-        if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::U) { $btnDup.PerformClick(); $e.Handled=$true; return }
-
-})
+    })
 
 
 
@@ -7746,51 +7968,52 @@ $grid.Add_KeyDown({
 
 $grid.Add_CellDoubleClick({
 
-    param($sender, $e)
+        param($sender, $e)
 
 
 
-    # Ignore header / divider double-clicks (RowIndex -1) so column auto-size works normally
+        # Ignore header / divider double-clicks (RowIndex -1) so column auto-size works normally
 
-    if ($null -ne $e -and $e.RowIndex -lt 0) { return }
+        if ($null -ne $e -and $e.RowIndex -lt 0) { return }
 
 
 
-    try {
+        try {
 
-        # S'assurer que la ligne double-cliquée devient la sélection (sinon SelectedRows peut être vide/ancienne)
+            # S'assurer que la ligne double-cliquée devient la sélection (sinon SelectedRows peut être vide/ancienne)
 
-        if ($null -ne $e -and $e.RowIndex -ge 0 -and $e.RowIndex -lt $grid.Rows.Count) {
+            if ($null -ne $e -and $e.RowIndex -ge 0 -and $e.RowIndex -lt $grid.Rows.Count) {
 
-            $grid.ClearSelection()
+                $grid.ClearSelection()
 
-            $grid.Rows[$e.RowIndex].Selected = $true
+                $grid.Rows[$e.RowIndex].Selected = $true
 
-            $grid.CurrentCell = $grid.Rows[$e.RowIndex].Cells[0]
+                $grid.CurrentCell = $grid.Rows[$e.RowIndex].Cells[0]
+
+            }
+
+
+
+            # Même logique que Ctrl+E (qui fonctionne)
+
+            if (Ensure-ExactlyOneSelected) {
+
+                $p = @(Get-SelectedPaths)[0]
+
+                if ($p) { Execute-Paths @($p) }
+
+            }
+
+        }
+        catch {
+
+            [System.Windows.Forms.MessageBox]::Show($form, "Cannot open:`r`n$($_.Exception.Message)", "Execute",
+
+                [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
 
         }
 
-
-
-        # Même logique que Ctrl+E (qui fonctionne)
-
-        if (Ensure-ExactlyOneSelected) {
-
-            $p = @(Get-SelectedPaths)[0]
-
-            if ($p) { Execute-Paths @($p) }
-
-        }
-
-    } catch {
-
-        [System.Windows.Forms.MessageBox]::Show($form, "Cannot open:`r`n$($_.Exception.Message)", "Execute",
-
-            [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
-
-    }
-
-})
+    })
 
 
 
