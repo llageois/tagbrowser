@@ -4132,7 +4132,7 @@ function Start-SearchSync([string[]]$PreferredPaths, [int]$FallbackIndex, [switc
         UseEverything = [bool]($chkEverything.Checked)
     }
 
-    
+
     # Record into search history (only when user actually launches a search)
     try { Add-SearchHistoryFromArgs $searchArgs } catch { }
 
@@ -4720,7 +4720,7 @@ function Capture-SettingsSnapshot {
     return $cfg
 }
 
-    
+
 function Show-InputBox([string]$title, [string]$prompt, [string]$default="") {
 
     return [Microsoft.VisualBasic.Interaction]::InputBox($prompt, $title, $default)
@@ -5501,7 +5501,7 @@ function Apply-Settings([object]$cfg) {
                 if ($dtAfter -and ($s.PSObject.Properties.Name -contains "AfterDate")) { $dtAfter.Value = [datetime]$s.AfterDate }
                 if ($dtBefore -and ($s.PSObject.Properties.Name -contains "BeforeOn")) { $dtBefore.Checked = [bool]$s.BeforeOn }
                 if ($dtBefore -and ($s.PSObject.Properties.Name -contains "BeforeDate")) { $dtBefore.Value = [datetime]$s.BeforeDate }
-                if ($chkEverything -and ($s.PSObject.Properties.Name -contains "UseEverything")) { 
+                if ($chkEverything -and ($s.PSObject.Properties.Name -contains "UseEverything")) {
         # Search history
         try {
             if ($s.PSObject.Properties.Name -contains "History") {
@@ -5542,7 +5542,7 @@ $chkEverything.Checked = [bool]$s.UseEverything }
                     }
                 }
             }
-        
+
 # Restore duplicates mode + selection (applied lazily after grid bind)
 try {
     if ($cfg.PSObject.Properties.Match("Duplicates").Count -gt 0 -and $cfg.Duplicates) {
@@ -6691,7 +6691,7 @@ Le statut en bas a droite reste reserve a l'activite :
         $btnPrev.Enabled = $false
         $btnNext.Enabled = ($tabs.TabPages.Count -gt 1)
 
-        
+
         # Ensure help text is not shown as selected; keep focus on buttons, not the text area.
         try {
             $tabs.Add_SelectedIndexChanged({
