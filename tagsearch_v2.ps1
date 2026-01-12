@@ -1,4 +1,9 @@
 #requires -version 5.1
+# region TagBrowser.Core
+$script:tagBrowserCoreModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'src\TagBrowser.Core\TagBrowser.Core.psm1'
+Import-Module -Name $script:tagBrowserCoreModulePath -Force -ErrorAction Stop
+# endregion TagBrowser.Core
+
 
 # Tag browser - PowerShell GUI (WinForms)
 
